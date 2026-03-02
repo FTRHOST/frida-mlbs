@@ -81,15 +81,31 @@ function startProtoScraping(libName) {
             il2cpp.field_static_get_value(fieldInstanceRD, instPtrRD);
             const instRD = instPtrRD.readPointer();
 
-            if(instRD.isNull() || getPlayersFunc === null) return;
+            if(instRD.isNull()) {
+                console.log("[-] RoomDataManager._instance is NULL");
+                return;
+            }
+            if(getPlayersFunc === null) {
+                console.log("[-] GetPlayers function pointer is NULL");
+                return;
+            }
 
             // Get List of RoomData
             const playersList = getPlayersFunc(instRD);
-            if(playersList.isNull()) return;
+            if(playersList.isNull()) {
+                console.log("[-] Players list is NULL");
+                return;
+            }
 
-            // Size ada di offset 0x18 dari list
-            const listSize = playersList.add(0x18).readInt();
+            // Cek apakah struct List C# sesuai
             const itemsArray = playersList.add(0x10).readPointer();
+            const listSize = playersList.add(0x18).readInt();
+
+            if (listSize <= 0 || listSize > 20) {
+                console.log("[-] Invalid List Size: " + listSize);
+                // Invalid size or no players, just return quietly
+                return;
+            }
 
             let payload = {
                 type: "draft_room_data",
@@ -128,14 +144,12 @@ function startProtoScraping(libName) {
             }
 
             if(payload.players.length > 0) {
-                // Tampilkan payload ke konsol agar pengguna bisa mengecek data yang diambil
                 console.log(JSON.stringify(payload));
-                // Opsional: Kirim ke python via sendMessage (jika script ini berjalan via python frida runner)
                 send(payload);
             }
 
         } catch (e) {
-            // Tangkap dan sembunyikan internal read errors agar loop tetap jalan
+            console.log("[-] Loop Error: " + e.message);
         }
     }, 2000);
 }
