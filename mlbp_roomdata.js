@@ -1,6 +1,6 @@
 /**
  * MLBB Draft Pick RoomData Polling
- * Menggunakan RoomDataManager.Instance.GetPlayers()
+ * Menggunakan RoomDataManager._instance._players (Direct Memory Read)
  */
 
 function startRoomDataPolling(libName) {
@@ -70,31 +70,20 @@ function startRoomDataPolling(libName) {
     // Offset static field `_instance` (biasanya offset 0x0 dalam static block)
     const fieldInstanceRD = il2cpp.class_get_field_from_name(kRoomDataManager, Memory.allocUtf8String("_instance"));
 
-    // Method GetPlayers (instance method: argument ke-0 adalah pointer instancenya)
-    const mGetPlayers = il2cpp.class_get_method_from_name(kRoomDataManager, Memory.allocUtf8String("GetPlayers"), 0);
-
-    let getPlayersFunc = null;
-    if(!mGetPlayers.isNull()) {
-        getPlayersFunc = new NativeFunction(mGetPlayers.readPointer(), 'pointer', ['pointer']);
-    } else {
-        console.log("[-] GetPlayers method not found.");
-        return;
-    }
-
     setInterval(() => {
         try {
-            // Dapatkan instance singleton _instance
+            // Dapatkan pointer ke instance singleton _instance
             const instPtrRD = Memory.alloc(Process.pointerSize);
             il2cpp.field_static_get_value(fieldInstanceRD, instPtrRD);
             const instRD = instPtrRD.readPointer();
 
             if(instRD.isNull()) {
-                // RoomDataManager belum init, wajar jika tidak di dalam room.
+                // RoomDataManager belum init
                 return;
             }
 
-            // Dapatkan list (C# List<RoomData>)
-            const playersList = getPlayersFunc(instRD);
+            // Baca field _players di offset 0x10 dari instance
+            const playersList = instRD.add(0x10).readPointer();
             if(playersList.isNull()) {
                 return;
             }
@@ -151,8 +140,8 @@ function startRoomDataPolling(libName) {
             }
 
         } catch (e) {
-            // Silently drop memory errors, expected during scene loading/unloading
-            // console.log("[-] Loop Error: " + e.message);
+            // Aktifkan error log
+            console.log("[-] Loop Error: " + e.message);
         }
     }, 1000);
 }
