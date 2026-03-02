@@ -21,7 +21,8 @@ function startProtoScraping(libName) {
         class_get_method_from_name: n("il2cpp_class_get_method_from_name", 'pointer', ['pointer', 'pointer', 'int'])
     };
 
-    let image, kChooseHeroMgr;
+    let image = null;
+    let kChooseHeroMgr = null;
     const assemblies = il2cpp.domain_get_assemblies(il2cpp.domain_get(), Memory.alloc(8));
 
     for (let i = 0; i < 100; i++) {
