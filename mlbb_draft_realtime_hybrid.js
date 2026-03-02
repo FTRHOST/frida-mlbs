@@ -1,9 +1,10 @@
 /**
- * MLBB Draft Pick Realtime Hybrid Scraper
- * Menggabungkan Polling dari ChooseHeroMgr.m_quickMatchRoomPayerList dan Event Hook MTTDProto
+ * MLBB Draft Pick Real-Time Scraper (Hybrid)
+ * Menambahkan cache state untuk di-polling secara aktif agar
+ * frontend/client mendapat update setiap 2 detik meskipun tidak ada event masuk.
  */
 
-function startHybridScraping(libName) {
+function startProtoScraping(libName) {
     const targetLib = Process.getModuleByName(libName);
     function n(name, ret, args) {
         const addr = targetLib.findExportByName(name);
@@ -18,13 +19,13 @@ function startHybridScraping(libName) {
         image_get_class_count: n("il2cpp_image_get_class_count", 'uint64', ['pointer']),
         image_get_class: n("il2cpp_image_get_class", 'pointer', ['pointer', 'uint64']),
         class_get_name: n("il2cpp_class_get_name", 'pointer', ['pointer']),
-        class_get_method_from_name: n("il2cpp_class_get_method_from_name", 'pointer', ['pointer', 'pointer', 'int']),
-        class_get_field_from_name: n("il2cpp_class_get_field_from_name", 'pointer', ['pointer', 'pointer']),
-        field_static_get_value: n("il2cpp_field_static_get_value", 'void', ['pointer', 'pointer']),
+        class_get_method_from_name: n("il2cpp_class_get_method_from_name", 'pointer', ['pointer', 'pointer', 'int'])
     };
 
     let image = null;
     let kChooseHeroMgr = null;
+    let kBattleReceiveMessage = null;
+
     const assemblies = il2cpp.domain_get_assemblies(il2cpp.domain_get(), Memory.alloc(8));
 
     for (let i = 0; i < 100; i++) {
@@ -44,13 +45,17 @@ function startHybridScraping(libName) {
         const k = il2cpp.image_get_class(image, j);
         const name = il2cpp.class_get_name(k).readCString();
         if (name === "ChooseHeroMgr") kChooseHeroMgr = k;
+        if (name === "BattleReceiveMessage") kBattleReceiveMessage = k;
     }
 
     if(!kChooseHeroMgr) {
         console.log("[-] ChooseHeroMgr class not found.");
         return;
     }
-    console.log("[+] ChooseHeroMgr found. Initializing Hybrid Scraper...");
+    console.log("[+] Classes found. Injecting hybrid hooks...");
+
+    // Cache untuk menampung data pemain terakhir yang valid.
+    let lastKnownPlayers = [];
 
     // --- HELPER BACA STRING ---
     function readCsharpString(ptr) {
@@ -62,75 +67,7 @@ function startHybridScraping(libName) {
         } catch(e) { return ""; }
     }
 
-    // --- STATIC FIELD OFFSET ---
-    // [Field] 0x88 : m_quickMatchRoomPayerList
-    const staticListField = il2cpp.class_get_field_from_name(kChooseHeroMgr, Memory.allocUtf8String("m_quickMatchRoomPayerList"));
-
-    setInterval(() => {
-        try {
-            // Kita polling m_quickMatchRoomPayerList dari class ChooseHeroMgr secara static
-            const listPtrOut = Memory.alloc(Process.pointerSize);
-            il2cpp.field_static_get_value(staticListField, listPtrOut);
-            const listPtr = listPtrOut.readPointer();
-
-            if (listPtr.isNull()) {
-                // Not in draft pick maybe
-                return;
-            }
-
-            const itemsArray = listPtr.add(0x10).readPointer();
-            const listSize = listPtr.add(0x18).readInt();
-
-            if (listSize <= 0 || listSize > 20) return;
-
-            let payload = {
-                type: "draft_polling",
-                players: []
-            };
-
-            for (let i = 0; i < listSize; i++) {
-                const roomDataPtr = itemsArray.add(0x20 + (i * Process.pointerSize)).readPointer();
-                if(roomDataPtr.isNull()) continue;
-
-                // [Field] 0x40 : _sName
-                // [Field] 0x4c : heroid
-                // [Field] 0x64 : summonSkillId
-                // [Field] 0x140 : iRoad
-                // [Field] 0x30 : iCamp
-                // [Field] 0xb0 : banHero
-                const namePtr = roomDataPtr.add(0x40).readPointer();
-                const playerName = readCsharpString(namePtr);
-
-                const heroId = roomDataPtr.add(0x4c).readInt();
-                const summonSkillId = roomDataPtr.add(0x64).readInt();
-                const iRoad = roomDataPtr.add(0x140).readInt();
-                const iCamp = roomDataPtr.add(0x30).readInt();
-                const banHero = roomDataPtr.add(0xb0).readInt();
-
-                payload.players.push({
-                    name: playerName,
-                    camp: iCamp,
-                    heroId: heroId,
-                    banHero: banHero,
-                    battleSkillId: summonSkillId,
-                    lane: iRoad
-                });
-            }
-
-            if(payload.players.length > 0) {
-                // Bisa dikirim via send(), saya gunakan console.log dulu agar mudah dilihat user
-                send(payload);
-            }
-
-        } catch(e) {
-            // Silent error inside polling
-        }
-    }, 2000);
-
-
-    // ==========================================
-    // EVENT HOOKING PROTO (Seperti yang sudah berhasil)
-    // ==========================================
+    // Fungsi untuk memparsing list <MTTDProto.BattlePlayerInfo>
     function parsePlayerList(listPtr, eventName) {
         if (listPtr.isNull()) return;
         try {
@@ -138,11 +75,7 @@ function startHybridScraping(libName) {
             const listSize = listPtr.add(0x18).readInt();
             if (listSize <= 0 || listSize > 20) return;
 
-            let payload = {
-                type: "draft_proto",
-                event: eventName,
-                players: []
-            };
+            let currentPlayers = [];
 
             for (let i = 0; i < listSize; i++) {
                 const playerPtr = itemsArray.add(0x20 + (i * Process.pointerSize)).readPointer();
@@ -157,7 +90,7 @@ function startHybridScraping(libName) {
                 const uiBanHero = playerPtr.add(0x98).readInt();
                 const iRoad = playerPtr.add(0x174).readInt();
 
-                payload.players.push({
+                currentPlayers.push({
                     name: playerName,
                     camp: iCamp,
                     heroId: uiSelHero,
@@ -166,13 +99,29 @@ function startHybridScraping(libName) {
                     lane: iRoad
                 });
             }
-            send(payload);
 
-        } catch (e) {}
+            // Update global cache
+            if (currentPlayers.length > 0) {
+                lastKnownPlayers = currentPlayers;
+
+                // Kirim seketika saat event terjadi
+                let payload = {
+                    type: "draft_proto_event",
+                    event: eventName,
+                    players: currentPlayers
+                };
+                console.log(`\n[+] Event: ${eventName}`);
+                console.log(JSON.stringify(payload));
+                send(payload);
+            }
+
+        } catch (e) {
+            console.log(`[-] Error parsing player list for ${eventName}: ${e.message}`);
+        }
     }
 
-    function hookProtoMethod(methodName) {
-        const method = il2cpp.class_get_method_from_name(kChooseHeroMgr, Memory.allocUtf8String(methodName), -1);
+    function hookProtoMethod(methodName, classNamePtr) {
+        const method = il2cpp.class_get_method_from_name(classNamePtr, Memory.allocUtf8String(methodName), -1);
         if (!method.isNull()) {
             Interceptor.attach(method.readPointer(), {
                 onEnter: function(args) {
@@ -182,15 +131,36 @@ function startHybridScraping(libName) {
                 }
             });
             console.log(`   [Hooked] ${methodName}`);
+        } else {
+            console.log(`   [Not Found] ${methodName}`);
         }
     }
 
-    hookProtoMethod("on_Notify_StartBan");
-    hookProtoMethod("on_Notify_StartSelect");
-    hookProtoMethod("RefreshBattlePlayerInfo");
+    // List of events yang argumen ke-2 (args[1]) adalah List<MTTDProto.BattlePlayerInfo>
+    hookProtoMethod("on_Notify_StartBan", kChooseHeroMgr);
+    hookProtoMethod("on_Notify_StartSelect", kChooseHeroMgr);
+    hookProtoMethod("RefreshBattlePlayerInfo", kChooseHeroMgr);
+    hookProtoMethod("on_Notify_CommStartPreSelectRoad", kChooseHeroMgr);
+    hookProtoMethod("on_Notify_StartChooseRoad", kChooseHeroMgr);
+
+    // ==========================================
+    // POLLING ACTIVE (Memastikan data terkirim meski tidak ada event baru)
+    // ==========================================
+    setInterval(() => {
+        // Hanya mengirim jika cache data sudah terisi (sudah masuk draft)
+        if (lastKnownPlayers.length > 0) {
+            let payload = {
+                type: "draft_polling",
+                players: lastKnownPlayers
+            };
+            send(payload);
+        }
+    }, 2000);
+
+    console.log("[*] Hybrid Draft Hooks & Polling Active!");
 }
 
 const check = setInterval(() => {
     const mod = Process.findModuleByName("liblogic.so");
-    if (mod) { clearInterval(check); startHybridScraping(mod.name); }
+    if (mod) { clearInterval(check); startProtoScraping(mod.name); }
 }, 2000);
