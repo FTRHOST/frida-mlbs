@@ -1,0 +1,106 @@
+Attaching...
+[*] Menunggu library liblogic.so termuat...
+[Redmi Note 9::PID::13576 ]-> [+] liblogic.so ditemukan! Menginisiasi Event Scraper...
+[+] Mencari metadata dari Assembly-CSharp.dll...
+
+[+] Menyiapkan Event Hooking Massal...
+[*] Mencari global method: OnBanned(5 argumen)...
+[+] Memasang Hook OnBanned di class: RankingHeroShow
+[=] Total Hook untuk OnBanned dipasang di 1 class berbeda.
+
+[*] Mencari global method: OnPicked(4 argumen)...
+[+] Memasang Hook OnPicked di class: RankingHeroShow
+[=] Total Hook untuk OnPicked dipasang di 1 class berbeda.
+
+[*] Mencari global method: OnConfirm(5 argumen)...
+[+] Memasang Hook OnConfirm di class: RankingHeroShow
+[=] Total Hook untuk OnConfirm dipasang di 1 class berbeda.
+
+[*] Mencari global method: ReportBanHero(2 argumen)...
+[+] Memasang Hook ReportBanHero di class: CompetitionData
+[=] Total Hook untuk ReportBanHero dipasang di 1 class berbeda.
+
+[*] Mencari global method: ReportPickHero(3 argumen)...
+[=] Total Hook untuk ReportPickHero dipasang di 0 class berbeda.
+
+[+] Seluruh Event Hook MASSAL siap! Menunggu aksi player...
+
+
+[!!!] EVENT DETECTED: REPORT_BAN_TO_SERVER (Terpicu dari Class: CompetitionData)
+message: {'type': 'send', 'payload': {'type': 'draft_update_event', 'payload': {'eventTrigger': 'REPORT_BAN_TO_SERVER', 'gameState': 3, 'globalBanList': [], 'gl
+obalPickList': [], 'players': [{'uid': '186846626', 'name': 'RaggiL', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroI
+DChoose': 0}, {'uid': '332108113', 'name': 'Fathir_Qepo', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}
+, {'uid': '908065891', 'name': 'DymnnN', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '119092
+5987', 'name': 'JackTheRifle', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1269789256', 'na
+me': '(#SLEBEW#)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1520124210', 'name': '(.sara
+h.)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1591299695', 'name': 'Ubi rebus', 'camp':
+ 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1768301401', 'name': 'Hayabusa', 'camp': 1, 'isLocked'
+: False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1909234179', 'name': 'AKAZA', 'camp': 2, 'isLocked': False, 'heroId'
+: 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '2077477746', 'name': 'Neslite 2', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedH
+eroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}]}}} data: None
+
+[!!!] EVENT DETECTED: REPORT_BAN_TO_SERVER (Terpicu dari Class: CompetitionData)
+message: {'type': 'send', 'payload': {'type': 'draft_update_event', 'payload': {'eventTrigger': 'REPORT_BAN_TO_SERVER', 'gameState': 3, 'globalBanList': [], 'gl
+obalPickList': [], 'players': [{'uid': '186846626', 'name': 'RaggiL', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroI
+DChoose': 0}, {'uid': '332108113', 'name': 'Fathir_Qepo', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}
+, {'uid': '908065891', 'name': 'DymnnN', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '119092
+5987', 'name': 'JackTheRifle', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1269789256', 'na
+me': '(#SLEBEW#)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1520124210', 'name': '(.sara
+h.)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1591299695', 'name': 'Ubi rebus', 'camp':
+ 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1768301401', 'name': 'Hayabusa', 'camp': 1, 'isLocked'
+: False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1909234179', 'name': 'AKAZA', 'camp': 2, 'isLocked': False, 'heroId'
+: 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '2077477746', 'name': 'Neslite 2', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedH
+eroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}]}}} data: None
+
+[!!!] EVENT DETECTED: REPORT_BAN_TO_SERVER (Terpicu dari Class: CompetitionData)
+message: {'type': 'send', 'payload': {'type': 'draft_update_event', 'payload': {'eventTrigger': 'REPORT_BAN_TO_SERVER', 'gameState': 3, 'globalBanList': [], 'gl
+obalPickList': [], 'players': [{'uid': '186846626', 'name': 'RaggiL', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroI
+DChoose': 0}, {'uid': '332108113', 'name': 'Fathir_Qepo', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}
+, {'uid': '908065891', 'name': 'DymnnN', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '119092
+5987', 'name': 'JackTheRifle', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1269789256', 'na
+me': '(#SLEBEW#)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1520124210', 'name': '(.sara
+h.)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1591299695', 'name': 'Ubi rebus', 'camp':
+ 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1768301401', 'name': 'Hayabusa', 'camp': 1, 'isLocked'
+: False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1909234179', 'name': 'AKAZA', 'camp': 2, 'isLocked': False, 'heroId'
+: 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '2077477746', 'name': 'Neslite 2', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedH
+eroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}]}}} data: None
+
+[!!!] EVENT DETECTED: REPORT_BAN_TO_SERVER (Terpicu dari Class: CompetitionData)
+message: {'type': 'send', 'payload': {'type': 'draft_update_event', 'payload': {'eventTrigger': 'REPORT_BAN_TO_SERVER', 'gameState': 3, 'globalBanList': [], 'gl
+obalPickList': [], 'players': [{'uid': '186846626', 'name': 'RaggiL', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroI
+DChoose': 0}, {'uid': '332108113', 'name': 'Fathir_Qepo', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}
+, {'uid': '908065891', 'name': 'DymnnN', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '119092
+5987', 'name': 'JackTheRifle', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1269789256', 'na
+me': '(#SLEBEW#)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1520124210', 'name': '(.sara
+h.)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1591299695', 'name': 'Ubi rebus', 'camp':
+ 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1768301401', 'name': 'Hayabusa', 'camp': 1, 'isLocked'
+: False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1909234179', 'name': 'AKAZA', 'camp': 2, 'isLocked': False, 'heroId'
+: 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '2077477746', 'name': 'Neslite 2', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedH
+eroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}]}}} data: None
+
+[!!!] EVENT DETECTED: REPORT_BAN_TO_SERVER (Terpicu dari Class: CompetitionData)
+message: {'type': 'send', 'payload': {'type': 'draft_update_event', 'payload': {'eventTrigger': 'REPORT_BAN_TO_SERVER', 'gameState': 3, 'globalBanList': [], 'gl
+obalPickList': [], 'players': [{'uid': '186846626', 'name': 'RaggiL', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroI
+DChoose': 0}, {'uid': '332108113', 'name': 'Fathir_Qepo', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}
+, {'uid': '908065891', 'name': 'DymnnN', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '119092
+5987', 'name': 'JackTheRifle', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1269789256', 'na
+me': '(#SLEBEW#)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1520124210', 'name': '(.sara
+h.)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1591299695', 'name': 'Ubi rebus', 'camp':
+ 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1768301401', 'name': 'Hayabusa', 'camp': 1, 'isLocked'
+: False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1909234179', 'name': 'AKAZA', 'camp': 2, 'isLocked': False, 'heroId'
+: 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '2077477746', 'name': 'Neslite 2', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedH
+eroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}]}}} data: None
+
+[!!!] EVENT DETECTED: REPORT_BAN_TO_SERVER (Terpicu dari Class: CompetitionData)
+message: {'type': 'send', 'payload': {'type': 'draft_update_event', 'payload': {'eventTrigger': 'REPORT_BAN_TO_SERVER', 'gameState': 3, 'globalBanList': [], 'gl
+obalPickList': [], 'players': [{'uid': '186846626', 'name': 'RaggiL', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroI
+DChoose': 0}, {'uid': '332108113', 'name': 'Fathir_Qepo', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}
+, {'uid': '908065891', 'name': 'DymnnN', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '119092
+5987', 'name': 'JackTheRifle', 'camp': 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1269789256', 'na
+me': '(#SLEBEW#)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1520124210', 'name': '(.sara
+h.)', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1591299695', 'name': 'Ubi rebus', 'camp':
+ 2, 'isLocked': False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1768301401', 'name': 'Hayabusa', 'camp': 1, 'isLocked'
+: False, 'heroId': 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '1909234179', 'name': 'AKAZA', 'camp': 2, 'isLocked': False, 'heroId'
+: 0, 'bannedHeroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}, {'uid': '2077477746', 'name': 'Neslite 2', 'camp': 1, 'isLocked': False, 'heroId': 0, 'bannedH
+eroId': 0, 'summonSkillId': 0, 'uiHeroIDChoose': 0}]}}} data: None
+D

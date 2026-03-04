@@ -1,0 +1,28 @@
+     ____
+    / _  |   Frida 17.7.3 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to Redmi Note 9 (id=76aa07d10405)
+Attaching...
+[Redmi Note 9::PID::19629 ]-> [+] ChooseHeroMgr found. Injecting proto hooks...
+   [Hooked] on_Notify_StartBan
+   [Hooked] on_Notify_StartSelect
+   [Hooked] RefreshBattlePlayerInfo
+[*] MTTDProto Draft Hooks Active!
+
+[+] Event: RefreshBattlePlayerInfo
+{"type":"draft_proto","event":"RefreshBattlePlayerInfo","players":[{"name":"™AFZIManizICo™","camp":1,"heroId":0,"banHero":0,"battleSkillId":0,"lane":4},{"name":"Fathir_Qepo","camp":2,"heroId":0,"banHero":131,"battleSkillId":0,"lane":3},{"name":"Alv Nurfath","camp":1,"heroId":0,"banHero":21,"battleSkillId":0,"lane":2},{"name":"Ken Lawrence.","camp":2,"heroId":0,"banHero":0,"battleSkillId":0,"lane":4},{"name":"putri75","camp":2,"heroId":0,"banHero":103,"battleSkillId":0,"lane":1},{"name":"leparissa ambon","camp":2,"heroId":0,"banHero":50,"battleSkillId":0,"lane":5},{"name":"Quinn","camp":1,"heroId":0,"banHero":42,"battleSkillId":0,"lane":5},{"name":"FHM_aji","camp":2,"heroId":0,"banHero":0,"battleSkillId":0,"lane":2},{"name":"cipluk","camp":1,"heroId":0,"banHero":0,"battleSkillId":0,"lane":3},{"name":"gak tau yaa","camp":1,"heroId":0,"banHero":0,"battleSkillId":0,"lane":1}]}
+
+[+] Event: on_Notify_StartSelect
+{"type":"draft_proto","event":"on_Notify_StartSelect","players":[{"name":"™AFZIManizICo™","camp":1,"heroId":0,"banHero":0,"battleSkillId":0,"lane":4},{"name":"Fathir_Qepo","camp":2,"heroId":0,"banHero":131,"battleSkillId":0,"lane":3},{"name":"Alv Nurfath","camp":1,"heroId":0,"banHero":21,"battleSkillId":0,"lane":2},{"name":"Ken Lawrence.","camp":2,"heroId":0,"banHero":0,"battleSkillId":0,"lane":4},{"name":"putri75","camp":2,"heroId":0,"banHero":103,"battleSkillId":0,"lane":1},{"name":"leparissa ambon","camp":2,"heroId":0,"banHero":50,"battleSkillId":0,"lane":5},{"name":"Quinn","camp":1,"heroId":0,"banHero":42,"battleSkillId":0,"lane":5},{"name":"FHM_aji","camp":2,"heroId":0,"banHero":0,"battleSkillId":0,"lane":2},{"name":"cipluk","camp":1,"heroId":0,"banHero":0,"battleSkillId":0,"lane":3},{"name":"gak tau yaa","camp":1,"heroId":0,"banHero":0,"battleSkillId":0,"lane":1}]}message: {'type': 'send', 'payload': {'type': 'draft_proto', 'event': 'RefreshBattlePlayerInfo', 'players': [{'name': '™AFZIManizICo™', 'camp': 1, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 4}, {'name': 'Fathir_Qepo', 'camp': 2, 'heroId': 0, 'banHero': 131, 'battleSkillId': 0, 'lane': 3}, {'name': 'Alv Nurfath', 'camp': 1, 'heroId': 0, 'banHero': 21, 'battleSkillId': 0, 'lane': 2}, {'name': 'Ken Lawrence.', 'camp': 2, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 4}, {'name': 'putri75', 'camp': 2, 'heroId': 0, 'banHero': 103, 'battleSkillId': 0, 'lane': 1}, {'name': 'leparissa ambon', 'camp': 2, 'heroId': 0, 'banHero': 50, 'battleSkillId': 0, 'lane': 5}, {'name': 'Quinn', 'camp': 1, 'heroId': 0, 'banHero': 42, 'battleSkillId': 0, 'lane': 5}, {'name': 'FHM_aji', 'camp': 2, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 2}, {'name': 'cipluk', 'camp': 1, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 3}, {'name': 'gak tau yaa', 'camp': 1, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 1}]}} data: 
+None
+message: {'type': 'send', 'payload': {'type': 'draft_proto', 'event': 'on_Notify_StartSelect', 'players': [{'name': '™AFZIManizICo™', 'camp': 1, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 4}, {'name': 'Fathir_Qepo', 'camp': 2, 'heroId': 0, 'banHero': 131, 'battleSkillId': 0, 'lane': 3}, {'name': 'Alv Nurfath', 'camp': 1, 'heroId': 0, 'banHero': 21, 'battleSkillId': 0, 'lane': 2}, {'name': 'Ken Lawrence.', 'camp': 2, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 4}, {'name': 'putri75', 'camp': 2, 'heroId': 0, 'banHero': 103, 'battleSkillId': 0, 'lane': 1}, {'name': 'leparissa ambon', 'camp': 2, 'heroId': 0, 'banHero': 50, 'battleSkillId': 0, 'lane': 5}, {'name': 'Quinn', 'camp': 1, 'heroId': 0, 'banHero': 42, 'battleSkillId': 0, 'lane': 5}, {'name': 'FHM_aji', 'camp': 2, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 2}, {'name': 'cipluk', 'camp': 1, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 3}, {'name': 'gak tau yaa', 'camp': 1, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 1}]}} data: None
+Device lost
+
+Thank you for using Frida!

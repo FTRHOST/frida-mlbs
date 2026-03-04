@@ -1,0 +1,22 @@
+     ____
+    / _  |   Frida 17.7.3 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to Redmi Note 9 (id=76aa07d10405)
+Attaching...
+[Redmi Note 9::PID::29903 ]-> [+] ChooseHeroMgr found. Initializing Hybrid Scraper...
+   [Hooked] on_Notify_StartBan
+   [Hooked] on_Notify_StartSelect
+   [Hooked] RefreshBattlePlayerInfo
+message: {'type': 'send', 'payload': {'type': 'draft_proto', 'event': 'RefreshBattlePlayerInfo', 'players': [{'name': '®Warior_Damage', 'camp': 2, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 2}, {'name': 'Fathir_Qepo', 'camp': 1, 'heroId': 0, 'banHero': 48, 'battleSkillId': 0, 'lane': 3}, {'name': 'khalisa...☺️', 'camp': 2, 'heroId': 0, 'banHero': 21, 'battleSkillId': 0, 'lane': 4}, {'name': 'XS H I N N', 'camp': 2, 'heroId': 0, 'banHero': 34, 'battleSkillId': 0, 'lane': 5}, {'name': 'Tina', 'camp': 1, 'heroId': 0, 'banHero': 4, 'battleSkillId': 0, 'lane': 4}, {'name': 'Marlina putri bahar', 'camp': 1, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 2}, {'name': 'SpesialOne', 'camp': 2, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 1}, {'name': 'jef17', 'camp': 2, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 3}, {'name': 'dikkk_4900', 'camp': 1, 'heroId': 0, 'banHero': 131, 'battleSkillId': 0, 'lane': 5}, {'name': 'zull@xzilong', 'camp': 1, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 1}]}} data: None
+message: {'type': 'send', 'payload': {'type': 'draft_proto', 'event': 'on_Notify_StartSelect', 'players': [{'name': '®Warior_Damage', 'camp': 2, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 2}, {'name': 'Fathir_Qepo', 'camp': 1, 'heroId': 0, 'banHero': 48, 'battleSkillId': 0, 'lane': 3}, {'name': 'khalisa...☺️', 'camp': 2, 'heroId': 0, 'banHero': 21, 'battleSkillId': 0, 'lane': 4}, {'name': 'XS H I N N', 'camp': 2, 'heroId': 0, 'banHero': 34, 'battleSkillId': 0, 'lane': 5}, {'name': 'Tina', 'camp': 1, 'heroId': 0, 'banHero': 4, 'battleSkillId': 0, 'lane': 4}, {'name': 'Marlina putri bahar', 'camp': 1, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 2}, {'name': 'SpesialOne', 'camp': 2, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 1}, {'name': 'jef17', 'camp': 2, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 3}, {'name': 'dikkk_4900', 'camp': 1, 'heroId': 0, 'banHero': 131, 'battleSkillId': 0, 'lane': 5}, {'name': 'zull@xzilong', 'camp': 1, 'heroId': 0, 'banHero': 0, 'battleSkillId': 0, 'lane': 1}]}} data: None
+Device disconnected.
+Connection terminated
+
+Thank you for using Frida!
