@@ -1,0 +1,43 @@
+     ____
+    / _  |   Frida 17.7.3 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to Redmi Note 9 (id=76aa07d10405)
+Attaching...
+[Redmi Note 9::PID::7252 ]-> 
+[+] API IL2CPP Initialized.
+[*] Memulai proses tracing fase Drafting / Ban Pick...
+[!] Menggunakan mode Trace Method yang Ringan & Bersih.
+[*] Mencari UIRankHero di 63 assemblies...
+[+] Berhasil menemukan UIRankHero! Memasang Hook...
+
+
+==================================================
+          DRAFTING PHASE DIMULAI                  
+==================================================
+
+🔴 [ BAN HERO ]  -> Hero yang di-ban  : ID 51
+🔴 [ BAN HERO ]  -> Hero yang di-ban  : ID 95
+🔴 [ BAN HERO ]  -> Hero yang di-ban  : ID 34
+🔴 [ BAN HERO ]  -> Hero yang di-ban  : ID 131
+🔴 [ BAN HERO ]  -> Hero yang di-ban  : ID 27
+🔴 [ BAN HERO ]  -> Hero yang di-ban  : ID 30
+🟢 [ PICK HERO ] -> Hero yang di-pick : ID 49
+🟢 [ PICK HERO ] -> Hero yang di-pick : ID 5
+🟢 [ PICK HERO ] -> Hero yang di-pick : ID 72
+🟢 [ PICK HERO ] -> Hero yang di-pick : ID 118
+🟢 [ PICK HERO ] -> Hero yang di-pick : ID 7
+🟢 [ PICK HERO ] -> Hero yang di-pick : ID 47
+🟢 [ PICK HERO ] -> Hero yang di-pick : ID 6
+🟢 [ PICK HERO ] -> Hero yang di-pick : ID 60
+🟢 [ PICK HERO ] -> Hero yang di-pick : ID 38
+🟢 [ PICK HERO ] -> Hero yang di-pick : ID 13
+Device lost
+
+Thank you for using Frida!

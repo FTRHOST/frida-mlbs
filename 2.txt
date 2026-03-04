@@ -1,0 +1,22 @@
+     ____
+    / _  |   Frida 17.7.3 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to Redmi Note 9 (id=76aa07d10405)
+Attaching...
+[*] Menunggu library liblogic.so termuat...
+[Redmi Note 9::PID::26420 ]-> [+] liblogic.so ditemukan! Menginisiasi Scraper...
+[+] Mencari metadata Assembly-CSharp.dll...
+[+] Mencari class target (SystemData, LogicBattleManager, UIRankHero)...
+[+] Memulai Scraper Loop tiap 1 detik...
+
+Device disconnected.
+Connection terminated
+
+Thank you for using Frida!
