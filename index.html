@@ -82,52 +82,52 @@
         </div>
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script>
+        const socket = io();
         const logContainer = document.getElementById('logContainer');
         let logHistory = {}; // Untuk menyimpan log agar tidak spam
+
+        socket.on('log', (data) => {
+            appendLog(data.message, data.type);
+        });
 
         function startHook() {
             const cls = document.getElementById('targetClass').value;
             const mode = document.getElementById('traceMode').value;
-            appendLog(`[System] Mengirim perintah inject ke class: ${cls} (Mode: ${mode})`, 'system');
-            
-            // Di sini nantinya kita akan memanggil API/WebSocket ke Node.js
-            // Untuk simulasi UI, kita panggil fungsi simulasi
-            simulateIncomingFridaLog(`[CALL] ${cls}::Update terpanggil.`);
+            socket.emit('start-hook', { targetClass: cls, mode: mode });
         }
 
-        // Fungsi untuk menerima log dari Frida (via WebSocket nantinya)
+        // Fungsi untuk menerima log dari Frida
         function appendLog(message, type = 'call') {
             // ANTI-SPAM LOGIC
-            // Jika log pesannya sama persis, jangan buat baris baru, cukup tambahkan counter (x2, x3, dst)
             if (logHistory[message]) {
                 logHistory[message].count++;
-                document.getElementById(`badge-${logHistory[message].id}`).innerText = `x${logHistory[message].count}`;
+                const badge = document.getElementById(`badge-${logHistory[message].id}`);
+                if (badge) {
+                    badge.innerText = `x${logHistory[message].count}`;
+                    badge.style.display = 'inline-block';
+                }
                 return;
             }
 
             // Jika log baru
-            const logId = Date.now() + Math.random().toString(16).slice(2);
+            const logId = 'id-' + Math.random().toString(16).slice(2);
             logHistory[message] = { id: logId, count: 1, text: message };
 
             const logEl = document.createElement('div');
             logEl.className = `log-line type-${type}`;
-            logEl.innerHTML = `${message} <span class="badge" id="badge-${logId}" style="display:none;">x1</span>`;
+            // Preserve newlines for full dump
+            const formattedMessage = message.replace(/\n/g, '<br>');
+            logEl.innerHTML = `${formattedMessage} <span class="badge" id="badge-${logId}" style="display:none;">x1</span>`;
             
             logContainer.appendChild(logEl);
-            logContainer.scrollTop = logContainer.scrollHeight; // Auto-scroll ke bawah
-
-            // Tampilkan badge jika count > 1
-            setTimeout(() => {
-                if(logHistory[message].count > 1) {
-                    document.getElementById(`badge-${logId}`).style.display = 'inline-block';
-                }
-            }, 100);
+            logContainer.scrollTop = logContainer.scrollHeight;
         }
 
         function clearLogs() {
             logContainer.innerHTML = '';
-            logHistory = {}; // Reset anti-spam counter
+            logHistory = {};
         }
 
         function filterLogs() {
@@ -140,13 +140,6 @@
                     log.style.display = 'none';
                 }
             });
-        }
-
-        // --- SIMULASI --- (Hapus ini saat dihubungkan ke Node.js)
-        function simulateIncomingFridaLog(msg) {
-            setInterval(() => {
-                appendLog(msg, 'call'); // Mensimulasikan log Update yang dipanggil berulang kali
-            }, 50); // Spam setiap 50ms
         }
     </script>
 </body>

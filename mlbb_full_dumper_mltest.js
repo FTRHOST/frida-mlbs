@@ -1,12 +1,17 @@
 /**
- * MLBB Full Il2Cpp Dumper
- * Menghasilkan dump.cs lengkap dari memori.
- * Output: /storage/emulated/0/Android/data/com.mobilelegends.taptest/files/dump.cs
+ * MLBB Full Il2Cpp Dumper (Modified with Data Types & Value Extraction Mode)
  */
 
 function dumpAll() {
-  const libName = Process.findModuleByName("libcsharp.so") ? "libcsharp.so" : "libil2cpp.so";
+  // --- KONFIGURASI MODE ---
+  // 1 = Normal Dump (Hanya Nama, Offset, dan Tipe Data)
+  // 2 = Value Dump (Sama seperti Normal, ditambah mengekstrak nilai dari Static Fields ke file terpisah)
+  const CURRENT_MODE = 2;
+  // ------------------------
+
+  const libName = Process.findModuleByName("liblogic.so") ? "liblogic.so" : "libil2cpp.so";
   console.log("[*] Memulai Dump pada: " + libName);
+  console.log(`[*] Mode Aktif: ${CURRENT_MODE === 1 ? "NORMAL DUMP" : "VALUE DUMP"}`);
 
   const lib = Process.getModuleByName(libName);
   const base = lib.base;
@@ -16,6 +21,7 @@ function dumpAll() {
     return addr ? new NativeFunction(addr, ret, args) : null;
   }
 
+  // Menambahkan fungsi tambahan untuk mengekstrak nilai dan tipe
   const il2cpp = {
     domain_get: n("il2cpp_domain_get", 'pointer', []),
     domain_get_assemblies: n("il2cpp_domain_get_assemblies", 'pointer', ['pointer', 'pointer']),
@@ -29,6 +35,8 @@ function dumpAll() {
     field_get_name: n("il2cpp_field_get_name", 'pointer', ['pointer']),
     field_get_offset: n("il2cpp_field_get_offset", 'uint32', ['pointer']),
     field_get_type: n("il2cpp_field_get_type", 'pointer', ['pointer']),
+    field_get_flags: n("il2cpp_field_get_flags", 'int', ['pointer']), // Untuk cek Static
+    class_get_static_field_data: n("il2cpp_class_get_static_field_data", 'pointer', ['pointer']), // Untuk ambil data static
     class_get_methods: n("il2cpp_class_get_methods", 'pointer', ['pointer', 'pointer']),
     method_get_name: n("il2cpp_method_get_name", 'pointer', ['pointer']),
     method_get_return_type: n("il2cpp_method_get_return_type", 'pointer', ['pointer']),
@@ -38,8 +46,16 @@ function dumpAll() {
     method_get_param_name: n("il2cpp_method_get_param_name", 'pointer', ['pointer', 'uint32'])
   };
 
-  const outPath = "/storage/emulated/0/Android/data/com.mobile.legends/files/dump.cs";
+  const outPath = "/storage/emulated/0/Android/data/com.mobilelegends.taptest/files/dump.cs";
+  const valueOutPath = "/storage/emulated/0/Android/data/com.mobilelegends.taptest/files/values_dump.txt";
+
   const file = new File(outPath, "w");
+  let valueFile = null;
+
+  if (CURRENT_MODE === 2) {
+    valueFile = new File(valueOutPath, "w");
+    valueFile.write(`// Static Values Dumped from ${libName}\n\n`);
+  }
 
   console.log("[*] Mencari Assembly-CSharp...");
   const domain = il2cpp.domain_get();
@@ -55,48 +71,89 @@ function dumpAll() {
     if (imgName === "Assembly-CSharp.dll") {
       const classCount = Number(il2cpp.image_get_class_count(img));
       console.log(`[V] Dumping ${classCount} kelas ke ${outPath}...`);
-      file.write(`// Dumped from ${libName} at ${new Date().toISOString()}
-
-`);
+      file.write(`// Dumped from ${libName} at ${new Date().toISOString()}\n\n`);
 
       for (let j = 0; j < classCount; j++) {
         const klass = il2cpp.image_get_class(img, j);
         const name = il2cpp.class_get_name(klass).readCString();
         const ns = il2cpp.class_get_namespace(klass).readCString();
 
-        file.write(`// Namespace: ${ns}
-class ${name} {
-`);
+        file.write(`// Namespace: ${ns}\nclass ${name} {\n`);
 
-        // Dump Fields
+        // --- DUMP FIELDS & DATA TYPES ---
         const iterField = Memory.alloc(Process.pointerSize).writePointer(NULL);
         let field;
         while (!(field = il2cpp.class_get_fields(klass, iterField)).isNull()) {
           const fName = il2cpp.field_get_name(field).readCString();
           const fOffset = il2cpp.field_get_offset(field);
-          file.write(`  [Field] 0x${fOffset.toString(16)} : ${fName}
-`);
+
+          // Dapatkan Tipe Data
+          const fTypePtr = il2cpp.field_get_type(field);
+          const fTypeName = il2cpp.type_get_name(fTypePtr).readCString();
+
+          // Cek apakah field ini Static (Flag: 0x0010)
+          const flags = il2cpp.field_get_flags(field);
+          const isStatic = (flags & 0x0010) !== 0;
+          const modifier = isStatic ? "static " : "";
+
+          file.write(`  [Field] 0x${fOffset.toString(16)} : ${modifier}${fTypeName} ${fName}\n`);
+
+          // --- EKSTRAKSI VALUE (Hanya untuk Static di Global Dump) ---
+          if (CURRENT_MODE === 2 && isStatic && valueFile !== null) {
+            try {
+              // Membaca area memori static
+              const staticDataPtr = il2cpp.class_get_static_field_data(klass);
+              if (!staticDataPtr.isNull()) {
+                const valuePtr = staticDataPtr.add(fOffset);
+                let extractedValue = "Unknown/Struct";
+
+                // Ekstraksi nilai dasar berdasarkan string tipe data
+                if (fTypeName === "System.Int32" || fTypeName === "int") {
+                  extractedValue = valuePtr.readS32();
+                } else if (fTypeName === "System.Boolean" || fTypeName === "bool") {
+                  extractedValue = valuePtr.readU8() === 1 ? "true" : "false";
+                } else if (fTypeName === "System.Single" || fTypeName === "float") {
+                  extractedValue = valuePtr.readFloat();
+                } else if (fTypeName === "System.String" || fTypeName === "string") {
+                  // Membaca Il2Cpp String (offset 0x14 biasanya berisi karakter pada arsitektur 64bit)
+                  const strPtr = valuePtr.readPointer();
+                  if (!strPtr.isNull()) {
+                    extractedValue = `"${strPtr.add(0x14).readUtf16String()}"`;
+                  } else {
+                    extractedValue = "null";
+                  }
+                }
+
+                valueFile.write(`[${ns}.${name}] ${fTypeName} ${fName} = ${extractedValue}\n`);
+              }
+            } catch (e) {
+              // Class mungkin belum diinisialisasi oleh game
+              valueFile.write(`[${ns}.${name}] ${fTypeName} ${fName} = [Uninitialized/Error]\n`);
+            }
+          }
         }
 
-        // Dump Methods
+        // --- DUMP METHODS & RETURN TYPES ---
         const iterMethod = Memory.alloc(Process.pointerSize).writePointer(NULL);
         let method;
         while (!(method = il2cpp.class_get_methods(klass, iterMethod)).isNull()) {
           const mName = il2cpp.method_get_name(method).readCString();
+
+          // Dapatkan Return Type
+          const retTypePtr = il2cpp.method_get_return_type(method);
+          const retTypeName = il2cpp.type_get_name(retTypePtr).readCString();
+
           const mPtr = method.readPointer(); // methodPointer
           let rva = "0x0";
           if (!mPtr.isNull()) {
             rva = "0x" + mPtr.sub(base).toString(16);
           }
-          file.write(`  [Method] RVA: ${rva} | Name: ${mName}
-`);
+          file.write(`  [Method] RVA: ${rva} | ${retTypeName} ${mName}()\n`);
         }
 
-        file.write(`}
+        file.write(`}\n\n`);
 
-`);
-
-        if (j % 500 === 0) console.log(`Progress: ${j}/${classCount} classes...`);
+        if (j > 0 && j % 500 === 0) console.log(`Progress: ${j}/${classCount} classes...`);
       }
       break;
     }
@@ -104,6 +161,10 @@ class ${name} {
 
   file.flush();
   file.close();
+  if (valueFile) {
+    valueFile.flush();
+    valueFile.close();
+  }
   console.log("[+] DUMP SELESAI!");
 }
 
