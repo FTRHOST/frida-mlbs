@@ -1,5 +1,5 @@
 /**
- * MLBB Full Il2Cpp Dumper (Modified with Data Types & Value Extraction Mode)
+ * MLBB Full Il2Cpp Dumper (Modified with Data Types, Value Extraction, & Address Formatting)
  */
 
 function dumpAll() {
@@ -7,11 +7,24 @@ function dumpAll() {
   // 1 = Normal Dump (Hanya Nama, Offset, dan Tipe Data)
   // 2 = Value Dump (Sama seperti Normal, ditambah mengekstrak nilai dari Static Fields ke file terpisah)
   const CURRENT_MODE = 2;
+
+  // --- KONFIGURASI TAMPILAN ALAMAT ---
+  // Format Address untuk Method
+  // "RVA"      = Relative Virtual Address (Base module dikurangi pointer, ideal untuk IDA Pro / Ghidra)
+  // "ABSOLUTE" = Absolute Memory Address (Alamat asli di memory saat runtime)
+  // "NONE"     = Sembunyikan alamat method
+  const METHOD_ADDRESS_FORMAT = "NONE";
+
+  // Format Offset untuk Field
+  // true  = Tampilkan offset field (misal: 0x10)
+  // false = Sembunyikan offset field
+  const SHOW_FIELD_OFFSET = false;
   // ------------------------
 
   const libName = Process.findModuleByName("liblogic.so") ? "liblogic.so" : "libil2cpp.so";
   console.log("[*] Memulai Dump pada: " + libName);
   console.log(`[*] Mode Aktif: ${CURRENT_MODE === 1 ? "NORMAL DUMP" : "VALUE DUMP"}`);
+  console.log(`[*] Method Address Mode: ${METHOD_ADDRESS_FORMAT}`);
 
   const lib = Process.getModuleByName(libName);
   const base = lib.base;
@@ -35,8 +48,8 @@ function dumpAll() {
     field_get_name: n("il2cpp_field_get_name", 'pointer', ['pointer']),
     field_get_offset: n("il2cpp_field_get_offset", 'uint32', ['pointer']),
     field_get_type: n("il2cpp_field_get_type", 'pointer', ['pointer']),
-    field_get_flags: n("il2cpp_field_get_flags", 'int', ['pointer']), // Untuk cek Static
-    class_get_static_field_data: n("il2cpp_class_get_static_field_data", 'pointer', ['pointer']), // Untuk ambil data static
+    field_get_flags: n("il2cpp_field_get_flags", 'int', ['pointer']),
+    class_get_static_field_data: n("il2cpp_class_get_static_field_data", 'pointer', ['pointer']),
     class_get_methods: n("il2cpp_class_get_methods", 'pointer', ['pointer', 'pointer']),
     method_get_name: n("il2cpp_method_get_name", 'pointer', ['pointer']),
     method_get_return_type: n("il2cpp_method_get_return_type", 'pointer', ['pointer']),
@@ -87,27 +100,26 @@ function dumpAll() {
           const fName = il2cpp.field_get_name(field).readCString();
           const fOffset = il2cpp.field_get_offset(field);
 
-          // Dapatkan Tipe Data
           const fTypePtr = il2cpp.field_get_type(field);
           const fTypeName = il2cpp.type_get_name(fTypePtr).readCString();
 
-          // Cek apakah field ini Static (Flag: 0x0010)
           const flags = il2cpp.field_get_flags(field);
           const isStatic = (flags & 0x0010) !== 0;
           const modifier = isStatic ? "static " : "";
 
-          file.write(`  [Field] 0x${fOffset.toString(16)} : ${modifier}${fTypeName} ${fName}\n`);
+          // Terapkan opsi Format Offset Field
+          const offsetStr = SHOW_FIELD_OFFSET ? `0x${fOffset.toString(16)} : ` : "";
 
-          // --- EKSTRAKSI VALUE (Hanya untuk Static di Global Dump) ---
+          file.write(`  [Field] ${offsetStr}${modifier}${fTypeName} ${fName}\n`);
+
+          // --- EKSTRAKSI VALUE ---
           if (CURRENT_MODE === 2 && isStatic && valueFile !== null) {
             try {
-              // Membaca area memori static
               const staticDataPtr = il2cpp.class_get_static_field_data(klass);
               if (!staticDataPtr.isNull()) {
                 const valuePtr = staticDataPtr.add(fOffset);
                 let extractedValue = "Unknown/Struct";
 
-                // Ekstraksi nilai dasar berdasarkan string tipe data
                 if (fTypeName === "System.Int32" || fTypeName === "int") {
                   extractedValue = valuePtr.readS32();
                 } else if (fTypeName === "System.Boolean" || fTypeName === "bool") {
@@ -115,7 +127,6 @@ function dumpAll() {
                 } else if (fTypeName === "System.Single" || fTypeName === "float") {
                   extractedValue = valuePtr.readFloat();
                 } else if (fTypeName === "System.String" || fTypeName === "string") {
-                  // Membaca Il2Cpp String (offset 0x14 biasanya berisi karakter pada arsitektur 64bit)
                   const strPtr = valuePtr.readPointer();
                   if (!strPtr.isNull()) {
                     extractedValue = `"${strPtr.add(0x14).readUtf16String()}"`;
@@ -127,7 +138,6 @@ function dumpAll() {
                 valueFile.write(`[${ns}.${name}] ${fTypeName} ${fName} = ${extractedValue}\n`);
               }
             } catch (e) {
-              // Class mungkin belum diinisialisasi oleh game
               valueFile.write(`[${ns}.${name}] ${fTypeName} ${fName} = [Uninitialized/Error]\n`);
             }
           }
@@ -139,16 +149,22 @@ function dumpAll() {
         while (!(method = il2cpp.class_get_methods(klass, iterMethod)).isNull()) {
           const mName = il2cpp.method_get_name(method).readCString();
 
-          // Dapatkan Return Type
           const retTypePtr = il2cpp.method_get_return_type(method);
           const retTypeName = il2cpp.type_get_name(retTypePtr).readCString();
 
           const mPtr = method.readPointer(); // methodPointer
-          let rva = "0x0";
-          if (!mPtr.isNull()) {
-            rva = "0x" + mPtr.sub(base).toString(16);
+
+          // Terapkan opsi Format Alamat Method
+          let addressFormat = "";
+          if (METHOD_ADDRESS_FORMAT === "RVA") {
+            const rva = mPtr.isNull() ? "0x0" : "0x" + mPtr.sub(base).toString(16);
+            addressFormat = `RVA: ${rva} | `;
+          } else if (METHOD_ADDRESS_FORMAT === "ABSOLUTE") {
+            const abs = mPtr.isNull() ? "0x0" : mPtr.toString();
+            addressFormat = `ABS: ${abs} | `;
           }
-          file.write(`  [Method] RVA: ${rva} | ${retTypeName} ${mName}()\n`);
+
+          file.write(`  [Method] ${addressFormat}${retTypeName} ${mName}()\n`);
         }
 
         file.write(`}\n\n`);

@@ -71,6 +71,13 @@ function writeBooleanField(instancePtr, offset, newValue) {
   } catch (e) { }
 }
 
+function writeIntField(instancePtr, offset, newValue) {
+  try {
+    let addr = instancePtr.add(offset);
+    addr.writeInt(newValue); // Menulis 4-byte Int32
+  } catch (e) { }
+}
+
 function readIl2CppStringSafe(strPtr) {
   if (!strPtr || strPtr.isNull() || strPtr.toInt32() === 0) return null;
   try {
@@ -208,6 +215,20 @@ function hookMethodReturnBool(targetClassName, targetMethodName, forceReturn) {
       break;
     }
   }
+}
+
+function autoPatchInt(targetClassName, targetMethodName, targetFieldName, forceValue) {
+  if (!il2cpp) return;
+  let klassPtr = findClassPtr(targetClassName);
+  if (!klassPtr) return;
+
+  let fields = getAllFields(klassPtr);
+  let targetField = fields.find(f => f.name === targetFieldName);
+  if (!targetField) return;
+
+  hookSpecificMethod(klassPtr, targetMethodName, (args) => {
+    if (!args[0].isNull()) writeIntField(args[0], targetField.offset, forceValue);
+  });
 }
 
 // =========================================================
@@ -917,6 +938,135 @@ function traceUITextOrigin(searchString) {
     }
   }
 }
+
+function traceSpecificMethod(targetClassName, targetMethodName) {
+  if (!il2cpp) return;
+  let klassPtr = findClassPtr(targetClassName);
+  if (!klassPtr) return console.log(`[!] Class ${targetClassName} tidak ditemukan.`);
+
+  let iter = Memory.alloc(Process.pointerSize).writePointer(NULL);
+  let methodPtr;
+  let found = false;
+
+  while (!(methodPtr = il2cpp.class_get_methods(klassPtr, iter)).isNull()) {
+    const methodName = il2cpp.method_get_name(methodPtr).readUtf8String();
+
+    if (methodName === targetMethodName) {
+      found = true;
+      const impl = methodPtr.readPointer();
+      if (!impl.isNull()) {
+        Interceptor.attach(impl, {
+          onEnter: function(args) {
+            console.log(`\n[🎯 TARGET HIT] ${targetClassName}::${methodName} terpanggil!`);
+            // Jika method ini punya argumen, Anda bisa membacanya di sini
+            // console.log(`Arg 1: ${args[1]}`); 
+          },
+          onLeave: function(retval) {
+            console.log(`[RET] ${targetClassName}::${methodName} mengembalikan nilai: ${retval}`);
+          }
+        });
+        console.log(`[*] Berhasil memasang hook khusus pada: ${targetMethodName}`);
+      }
+      break;
+    }
+  }
+  if (!found) console.log(`[!] Method ${targetMethodName} tidak ditemukan di class ${targetClassName}`);
+}
+
+
+function peekClassData(targetClassName) {
+  if (!il2cpp) return console.log("[!] IL2CPP belum siap!");
+
+  let klassPtr = findClassPtr(targetClassName);
+  if (!klassPtr) return console.log(`[!] Class ${targetClassName} tidak ditemukan.`);
+
+  // Ambil semua definisi field (nama & offset)
+  let fields = getAllFields(klassPtr);
+
+  // Mencari Static Instance (Biasanya tersimpan di vtable atau static fields)
+  // Catatan: Ini mencoba menebak pointer instance jika class memiliki field 'instance' atau 'm_Instance'
+  console.log(`\n[*] Membedah Data Aktif di Class: ${targetClassName}`);
+
+  hookAllMethods(klassPtr, (methodName, args) => {
+    let instance = args[0]; // Kita pinjam pointer dari pemanggilan method pertama kali
+    if (instance && !instance.isNull() && !lastFieldValues[targetClassName]) {
+      console.log(`[+] Instance ditemukan di: ${instance}`);
+      console.log(`[+] Nilai Data Saat Ini:`);
+
+      fields.forEach(f => {
+        let val = readFieldData(instance, f.offset, f.name);
+        console.log(`    |-- ${f.name} (0x${f.offset.toString(16)}): ${val}`);
+      });
+
+      // Simpan agar tidak spam log
+      lastFieldValues[targetClassName] = instance;
+    }
+  });
+
+  console.log(`[*] SIlakan buka menu/fitur terkait di game agar instance terdeteksi...`);
+}
+
+// =========================================================
+// FITUR TAMBAHAN: INT32 MODIFIER (FIELD & METHOD)
+// =========================================================
+
+// 1. Helper untuk menulis nilai Int32 ke field memori
+function writeIntField(instancePtr, offset, newValue) {
+  try {
+    let addr = instancePtr.add(offset);
+    addr.writeInt(newValue); // Menulis 4 byte integer (Int32)
+  } catch (e) {
+    console.log(`[!] Gagal menulis Int32 di offset 0x${offset.toString(16)}: ${e}`);
+  }
+}
+
+// 2. Mengubah nilai field Int32 secara otomatis setiap kali method trigger terpanggil
+function autoPatchInt(targetClassName, targetMethodName, targetFieldName, forceValue) {
+  if (!il2cpp) return;
+  let klassPtr = findClassPtr(targetClassName);
+  if (!klassPtr) return console.log(`[!] Class ${targetClassName} tidak ditemukan.`);
+
+  let fields = getAllFields(klassPtr);
+  let targetField = fields.find(f => f.name === targetFieldName);
+  if (!targetField) return console.log(`[!] Field ${targetFieldName} tidak ditemukan di class ${targetClassName}.`);
+
+  hookSpecificMethod(klassPtr, targetMethodName, (args) => {
+    if (!args[0].isNull()) {
+      writeIntField(args[0], targetField.offset, forceValue);
+    }
+  });
+  console.log(`[*] AutoPatch Int32 Aktif: ${targetClassName}::${targetFieldName} di-force ke ${forceValue}`);
+}
+
+// 3. Memaksa method untuk selalu mengembalikan (return) nilai Int32 tertentu
+function hookMethodReturnInt(targetClassName, targetMethodName, forceReturn) {
+  if (!il2cpp) return;
+  let klassPtr = findClassPtr(targetClassName);
+  if (!klassPtr) return console.log(`[!] Class ${targetClassName} tidak ditemukan.`);
+
+  let iter = Memory.alloc(Process.pointerSize).writePointer(NULL);
+  let methodPtr;
+  let found = false;
+
+  while (!(methodPtr = il2cpp.class_get_methods(klassPtr, iter)).isNull()) {
+    if (il2cpp.method_get_name(methodPtr).readUtf8String() === targetMethodName) {
+      found = true;
+      const impl = methodPtr.readPointer();
+      if (!impl.isNull()) {
+        Interceptor.attach(impl, {
+          onLeave: function(retval) {
+            // Menimpa nilai return asli dengan forceReturn
+            retval.replace(ptr(forceReturn));
+          }
+        });
+        console.log(`[*] Hook Return Int32 Aktif: ${targetClassName}::${targetMethodName}() selalu return ${forceReturn}`);
+      }
+      break;
+    }
+  }
+  if (!found) console.log(`[!] Method ${targetMethodName} tidak ditemukan di class ${targetClassName}.`);
+}
+
 // =========================================================
 // EKSEKUSI UTAMA (Tulis Perintahmu Di Dalam setTimeout)
 // =========================================================
@@ -926,7 +1076,6 @@ const check = setInterval(() => {
   if (mod) {
     clearInterval(check);
     initIl2cpp(mod.name);
-    hookMethodReturnBool("ChooseHeroMgr", "BActFreeSkin", true);
     hookMethodReturnBool("LoginCLibraryUtils", "mStaticIsSandBox", true);
     hookMethodReturnBool("BattleStaticInit", "IsAdjustSandBox", true);
     hookMethodReturnBool("FrameTimeRecorder", "mIsSandBoxMode", true);
@@ -940,12 +1089,39 @@ const check = setInterval(() => {
     hookMethodReturnBool("LogicExtension", "IsAdjustSandBox", true);
     hookMethodReturnBool("SDKReportModel", "isSandBox", true);
     hookMethodReturnBool("CommonDownloadMgr", "IsSandBoxEnv", true);
+    hookMethodReturnBool("CommonDownloadMgr", "get_IsDebug", true);
     hookMethodReturnBool("ModeVersionData", "CheckVersionInSandBox", true);
     hookMethodReturnBool("GSDKCore", "bSandbox", true);
     hookMethodReturnBool("SdkInit", "IsSandBox", true);
     hookMethodReturnBool("RankHeroMgr", "bAllRoadSelectedAutoSandboxExchange", true);
     hookMethodReturnBool("RankHeroMgr", " bOpenSandboxRoadExchangeAddition", true);
     hookMethodReturnBool("Cmd_Account_ByteDance_Login_CS", "bSandbox", true);
+    hookMethodReturnBool("ModelControlInBattle", "IsEsportRuneEnable", true);
+    hookMethodReturnBool("SystemData", "m_bEsportPlayer", true);
+    hookMethodReturnBool("SystemData", "BUseEsportsEmblem", true);
+    hookMethodReturnBool("SystemSwitchData", "BEsportsEmblemOpen", true);
+    hookMethodReturnBool("ModelControlInBattle", "SystemSwitchData", true);
+    hookMethodReturnBool("LuaHelper", "IsGmServerRunning", true);
+    hookMethodReturnBool("LuaHelper", "IsGmServerForceOnline", true);
+
+
+
+    hookMethodReturnBool("ChooseHeroMgr", "IsSkinUseable", true);
+    hookMethodReturnBool("ChooseHeroMgr", "BAutoTestMode", true);
+    hookMethodReturnBool("UIChooseHero", "CanSelectSkin", true);
+    hookMethodReturnBool("SystemData", "IsForbidSkin", false);
+
+
+
+    hookMethodReturnBool("NLLoadingUIAtlas", "_bGmLogin", true);
+    hookMethodReturnBool("IMobaPluginBridge", "IsForbidAssets", false);
+    hookMethodReturnBool("IMobaPluginBridge", "IsSkipMd5Check", false);
+
+
+
+
+
+
 
 
     // Beri jeda 5 detik agar game loading terlebih dahulu
@@ -991,4 +1167,4 @@ const check = setInterval(() => {
     }, 5000);
 
   }
-}, 1000);
+}, 1200);

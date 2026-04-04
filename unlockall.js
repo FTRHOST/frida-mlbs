@@ -1,20 +1,18 @@
 /**
- * MLBB UNLOCK ALL - MODULAR & FLEXIBLE ARCHITECTURE
+ * MLBB UNLOCK ALL (SKIN, STATUE, PAINT, ACTION, EFFECT) & UNRELEASED HOOK
+ * Menggunakan Il2Cpp Dynamic Reflection
  */
 
 const MOD_CONFIG = {
-  UnreleasedEnabled: true,
-  UnlockAllEnabled: true,
-  AntiBanEnabled: true
+  UnreleasedEnabled: true,  // Toggle Unreleased Heroes & Skins
+  UnlockAllEnabled: true    // Toggle Unlock ALL Cosmetics
 };
 
-// ==========================================
-// 1. CORE ENGINE (IL2CPP BRIDGE)
-// ==========================================
 let il2cpp = null;
-const classCache = {};
-const methodCache = {};
 
+// ==========================================
+// INISIALISASI IL2CPP API
+// ==========================================
 function initIl2cpp(libName) {
   const targetLib = Process.getModuleByName(libName);
   const n = (name, ret, args) => {
@@ -31,203 +29,171 @@ function initIl2cpp(libName) {
     class_get_name: n("il2cpp_class_get_name", 'pointer', ['pointer']),
     class_get_methods: n("il2cpp_class_get_methods", 'pointer', ['pointer', 'pointer']),
     method_get_name: n("il2cpp_method_get_name", 'pointer', ['pointer']),
-    object_new: n("il2cpp_object_new", 'pointer', ['pointer'])
+    method_get_return_type: n("il2cpp_method_get_return_type", 'pointer', ['pointer']),
+    class_from_type: n("il2cpp_class_from_type", 'pointer', ['pointer']),
+    object_new: n("il2cpp_object_new", 'pointer', ['pointer']) // Untuk membuat instance class baru
   };
   console.log("[+] API IL2CPP Initialized.");
 }
 
-function findClassPtr(className) {
-  if (classCache[className]) return classCache[className];
-
+function findClassPtr(name) {
   const domain = il2cpp.domain_get();
   let size = Memory.alloc(8);
   const assemblies = il2cpp.domain_get_assemblies(domain, size);
-
   for (let i = 0; i < size.readUInt(); i++) {
     const img = il2cpp.assembly_get_image(assemblies.add(i * Process.pointerSize).readPointer());
     for (let j = 0; j < il2cpp.image_get_class_count(img); j++) {
       const klass = il2cpp.image_get_class(img, j);
-      if (!klass.isNull() && il2cpp.class_get_name(klass).readUtf8String() === className) {
-        classCache[className] = klass;
-        return klass;
-      }
+      if (!klass.isNull() && il2cpp.class_get_name(klass).readUtf8String() === name) return klass;
     }
   }
-  console.warn(`[-] Class not found: ${className}`);
   return null;
 }
 
-function findMethodPtr(className, methodName) {
-  const cacheKey = `${className}::${methodName}`;
-  if (methodCache[cacheKey]) return methodCache[cacheKey];
+// ==========================================
+// 1. HOOK UNRELEASED FEATURES
+// ==========================================
+function hookUnreleasedFeatures() {
+  const targetMethods = [
+    "IsForbidSkin", "IsForbidHeros", "IsForbidARSkin", "IsForbidARHeros",
+    "IsForbidHeroInChooseHero", "IsActivityForbidHeros", "IsReplaceForbidHeros",
+    "IsForbidNewHeroList", "IsForbidHeadFrameForce", "IsForbidHeroDisOrder",
+    "IsForbidSkinNumTag", "IsForbidHero1v1", "IsForbidHeadFrame",
+    "IsForbidNameSkin", "IsForbidNameColor", "IsForbidRoomBorder",
+    "IsForbidDragonCrystal", "IsForbidStatue"
+  ];
 
-  const klass = findClassPtr(className);
-  if (!klass) return null;
+  let systemDataClass = findClassPtr("SystemData");
+  if (!systemDataClass) return;
 
   let iter = Memory.alloc(Process.pointerSize).writePointer(NULL);
   let methodPtr;
-  while (!(methodPtr = il2cpp.class_get_methods(klass, iter)).isNull()) {
+
+  while (!(methodPtr = il2cpp.class_get_methods(systemDataClass, iter)).isNull()) {
     const name = il2cpp.method_get_name(methodPtr).readUtf8String();
-    if (name === methodName) {
+    if (targetMethods.includes(name)) {
       const impl = methodPtr.readPointer();
       if (!impl.isNull()) {
-        methodCache[cacheKey] = impl;
-        return impl;
+        Interceptor.attach(impl, {
+          onLeave: function(retval) {
+            if (MOD_CONFIG.UnreleasedEnabled) retval.replace(ptr(0));
+          }
+        });
       }
     }
   }
-  console.warn(`[-] Method not found: ${cacheKey}`);
-  return null;
+  console.log("[+] Modul Unreleased Features dimuat.");
 }
 
-
 // ==========================================
-// 2. HOOK UTILITIES (HELPER)
+// 2. DYNAMIC UNLOCK ALL KOSMETIK
 // ==========================================
+function hookUnlockAll() {
+  let systemDataClass = findClassPtr("SystemData");
+  if (!systemDataClass) return;
 
-const HookApi = {
-  /**
-   * Memaksa method mengembalikan nilai tertentu (true/false/angka/pointer)
-   */
-  forceReturn: function(className, methodName, returnValue, conditionStr = "UnlockAllEnabled") {
-    const methodPtr = findMethodPtr(className, methodName);
-    if (!methodPtr) return;
+  // Kata kunci fitur yang ingin kita tembus
+  const unlockKeywords = ["Skin", "Statue", "Paint", "Action", "Effect", "Frame", "Emote", "Chat", "Avatar"];
 
-    Interceptor.attach(methodPtr, {
-      onLeave: function(retval) {
-        // Cek apakah fitur dihidupkan di config
-        if (MOD_CONFIG[conditionStr]) {
-          // Jika returnValue adalah boolean (true/false), ubah ke 1/0
-          let finalVal = typeof returnValue === "boolean" ? (returnValue ? 1 : 0) : returnValue;
-          retval.replace(ptr(finalVal));
+  let iter = Memory.alloc(Process.pointerSize).writePointer(NULL);
+  let methodPtr;
+  let hookedCount = 0;
+
+  while (!(methodPtr = il2cpp.class_get_methods(systemDataClass, iter)).isNull()) {
+    const name = il2cpp.method_get_name(methodPtr).readUtf8String();
+    const impl = methodPtr.readPointer();
+    if (impl.isNull()) continue;
+
+    // A. HOOK RETURN TRUE (Untuk fungsi seperti IsCanUseSkin, IsHaveAction, dsb)
+    if (name.startsWith("IsCanUse") || name.startsWith("CheckReputation") || name === "IsHeroInShop" || name === "GetLeaderSkinBForbid") {
+      Interceptor.attach(impl, {
+        onLeave: function(retval) {
+          if (MOD_CONFIG.UnlockAllEnabled) retval.replace(ptr(1)); // Return True
+        }
+      });
+      continue;
+    }
+
+    // B. HOOK RETURN OBJECT (Untuk fungsi IsHaveSkin, IsHaveStatue, GetMapPaint, dsb)
+    if (name.startsWith("IsHave") || name.startsWith("Get")) {
+      // Cek apakah namanya mengandung target kosmetik kita
+      if (unlockKeywords.some(keyword => name.includes(keyword))) {
+
+        // Ambil Tipe Class yang dikembalikan fungsi ini secara dinamis (misal CmdHeroStatue)
+        const returnTypePtr = il2cpp.method_get_return_type(methodPtr);
+        const returnClassPtr = il2cpp.class_from_type(returnTypePtr);
+
+        // Pastikan fungsi ini memang mengembalikan sebuah Class/Object
+        if (!returnClassPtr.isNull()) {
+          try {
+            Interceptor.attach(impl, {
+              onEnter: function(args) {
+                // Args[0] adalah "this" (instance), Args[1] biasanya ID item
+                try { this.reqId = args[1].toInt32(); }
+                catch (e) { this.reqId = 0; }
+              },
+              onLeave: function(retval) {
+                // Jika game bilang kita tidak punya itemnya (null) dan kita merequest ID valid
+                if (MOD_CONFIG.UnlockAllEnabled && retval.isNull() && this.reqId > 0) {
+
+                  // Buat instance class palsu sesuai dengan tipe yang diminta game!
+                  let newInst = il2cpp.object_new(returnClassPtr);
+
+                  if (!newInst.isNull()) {
+                    // Offset 0x10 adalah letak iId di memori Unity C# (Turunan Il2CppObject)
+                    // Sisanya seperti iLimitTime otomatis 0 = Permanen
+                    newInst.add(0x10).writeU32(this.reqId);
+                    retval.replace(newInst);
+                  }
+                }
+              }
+            });
+            hookedCount++;
+          } catch (e) { }
         }
       }
-    });
-    console.log(`[+] Hooked: ${className}::${methodName} -> Forcing Return: ${returnValue}`);
-  },
-
-  /**
-   * Custom hook untuk logika yang lebih kompleks (seperti instansiasi objek)
-   */
-  custom: function(className, methodName, onEnterCb, onLeaveCb) {
-    const methodPtr = findMethodPtr(className, methodName);
-    if (!methodPtr) return;
-
-    Interceptor.attach(methodPtr, {
-      onEnter: onEnterCb || function(args) { },
-      onLeave: onLeaveCb || function(retval) { }
-    });
-    console.log(`[+] Custom Hooked: ${className}::${methodName}`);
+    }
   }
-};
+  console.log(`[+] Modul Unlock All dimuat (Ter-hook ${hookedCount} fungsi data Item).`);
 
+  // ==========================================
+  // 3. ANTI-BAN SERVER (SendRawData REPLACE)
+  // ==========================================
+  let gameServerConfigClass = findClassPtr("GameServerConfig");
+  if (gameServerConfigClass) {
+    let iter = Memory.alloc(Process.pointerSize).writePointer(NULL);
+    let methodPtr;
+    while (!(methodPtr = il2cpp.class_get_methods(gameServerConfigClass, iter)).isNull()) {
+      if (il2cpp.method_get_name(methodPtr).readUtf8String() === "SendRawData") {
+        const impl = methodPtr.readPointer();
+        if (!impl.isNull()) {
+          const blockedMsgs = [1015, 1016, 1019, 1020, 1031, 1032, 1035, 1036, 1160, 1161, 1162, 1163, 1208, 10017, 10018, 10192, 10193, 10603, 10604, 19457, 19458, 19459, 19460];
+          let origSendRawData = new NativeFunction(impl, 'void', ['pointer', 'uint32', 'pointer', 'int', 'int', 'int', 'bool', 'int']);
 
-// ==========================================
-// 3. CONFIGURATION (ATURAN HOOK)
-// ==========================================
-// Di sinilah fleksibilitasnya. Jika kamu butuh bypass fungsi baru,
-// cukup tambahkan di array ini tanpa menyentuh logika engine di atas.
-
-const SIMPLE_HOOK_RULES = [
-  // --- Unreleased Features (Bypass = False/0) ---
-  { class: "SystemData", method: "IsForbidSkin", return: false, config: "UnreleasedEnabled" },
-  { class: "SystemData", method: "IsForbidHeros", return: false, config: "UnreleasedEnabled" },
-  { class: "SystemData", method: "IsForbidARSkin", return: false, config: "UnreleasedEnabled" },
-  { class: "SystemData", method: "IsForbidARHeros", return: false, config: "UnreleasedEnabled" },
-  { class: "SystemData", method: "IsForbidHeroInChooseHero", return: false, config: "UnreleasedEnabled" },
-  { class: "SystemData", method: "IsForbidStatue", return: false, config: "UnreleasedEnabled" },
-
-  // --- Unlock All Cosmetics (Bypass = True/1) ---
-  { class: "SystemData", method: "IsCanUseSkin", return: true, config: "UnlockAllEnabled" },
-  { class: "SystemData", method: "CheckReputationUnlockSkin", return: true, config: "UnlockAllEnabled" },
-  { class: "SystemData", method: "IsHaveRecallEffect", return: true, config: "UnlockAllEnabled" },
-  { class: "SystemData", method: "IsHaveKillEffect", return: true, config: "UnlockAllEnabled" },
-  { class: "SystemData", method: "IsHaveSpawnEffect", return: true, config: "UnlockAllEnabled" },
-  { class: "SystemData", method: "IsHaveNotifyEffect", return: true, config: "UnlockAllEnabled" },
-  { class: "SystemData", method: "IsHaveBattleEmote", return: true, config: "UnlockAllEnabled" },
-  { class: "SystemData", method: "IsHaveAction", return: true, config: "UnlockAllEnabled" },
-
-  // --- Bypass UI Selection ---
-  { class: "UIRankHero", method: "BRankHeroCanUse", return: true, config: "UnlockAllEnabled" },
-  { class: "UIChooseHero", method: "CanSelectSkin", return: true, config: "UnlockAllEnabled" },
-  { class: "ChooseHeroMgr", method: "IsSkinUseable", return: true, config: "UnlockAllEnabled" }
-];
-
-
-// ==========================================
-// 4. MAIN INJECTION LOGIC
-// ==========================================
-
-// Global state untuk battle sync
-let BATTLE_STATE = { m_SkinID: 0, m_HeroID: 0 };
-
-function applySimpleHooks() {
-  SIMPLE_HOOK_RULES.forEach(rule => {
-    HookApi.forceReturn(rule.class, rule.method, rule.return, rule.config);
-  });
-}
-
-function applyComplexObjectHooks() {
-  // Logika untuk CmdHeroSkin (Membuat objek baru jika kosong)
-  const skinMethods = ["IsHaveSkin", "IsHaveSkinForever", "GetMCLimitSkin", "GetHeroSkin"];
-
-  skinMethods.forEach(methodName => {
-    HookApi.custom("SystemData", methodName,
-      function(args) { // onEnter
-        try { this.reqId = methodName.includes("GetHero") ? args[2].toInt32() : args[1].toInt32(); }
-        catch (e) { this.reqId = 0; }
-      },
-      function(retval) { // onLeave
-        if (MOD_CONFIG.UnlockAllEnabled && retval.isNull() && this.reqId > 0) {
-          let skinClassPtr = findClassPtr("CmdHeroSkin");
-          if (skinClassPtr) {
-            let skinInst = il2cpp.object_new(skinClassPtr);
-            if (!skinInst.isNull()) {
-              skinInst.add(0x10).writeU32(this.reqId);
-              skinInst.add(0x14).writeU32(0);
-              skinInst.add(0x18).writeU32(0);
-              retval.replace(skinInst);
-            }
-          }
+          Interceptor.replace(impl, new NativeCallback(function(instance, msgId, data, size, socketType, packType, lock, expSize) {
+            if (MOD_CONFIG.UnlockAllEnabled && blockedMsgs.includes(msgId)) return; // Block
+            origSendRawData(instance, msgId, data, size, socketType, packType, lock, expSize);
+          }, 'void', ['pointer', 'uint32', 'pointer', 'int', 'int', 'int', 'bool', 'int']));
         }
+        break;
       }
-    );
-  });
-}
-
-function hookAntiBan() {
-  HookApi.custom("GameServerConfig", "SendRawData", function(args) { }, function(retval) { });
-
-  // Karena SendRawData butuh penggantian implementasi (Interceptor.replace),
-  // kita handle secara khusus di luar HookApi standar.
-  const methodPtrBan = findMethodPtr("GameServerConfig", "SendRawData");
-  if (methodPtrBan && MOD_CONFIG.AntiBanEnabled) {
-    const blockedMsgs = [1015, 1016, 1019, 1020, 1031, 1032, 1035, 1036, 1160]; // Disingkat untuk contoh
-    let origSendRawData = new NativeFunction(methodPtrBan, 'void', ['pointer', 'uint32', 'pointer', 'int', 'int', 'int', 'bool', 'int']);
-
-    Interceptor.replace(methodPtrBan, new NativeCallback(function(instance, msgId, data, size, socketType, packType, lock, expSize) {
-      if (blockedMsgs.includes(msgId)) {
-        console.log(`[!] Blocked Anti-Ban Packet: ${msgId}`);
-        return;
-      }
-      origSendRawData(instance, msgId, data, size, socketType, packType, lock, expSize);
-    }, 'void', ['pointer', 'uint32', 'pointer', 'int', 'int', 'int', 'bool', 'int']));
-    console.log("[+] Anti-Ban Hooked.");
+    }
   }
 }
 
-// --- INITIALIZATION LOOP ---
+// --- Main Execution ---
 const check = setInterval(() => {
   const mod = Process.findModuleByName("liblogic.so") || Process.findModuleByName("libil2cpp.so");
   if (mod) {
     clearInterval(check);
     initIl2cpp(mod.name);
 
-    console.log("\n--- Applying Hooks ---");
-    applySimpleHooks();          // Menerapkan semua bypass boolean (true/false)
-    applyComplexObjectHooks();   // Menerapkan logika pembuatan objek CmdSkin/CmdStatue
-    hookAntiBan();               // Menerapkan bypass anti-ban server
+    console.log("\n[+] Menerapkan Hooks Kosmetik...");
+    hookUnreleasedFeatures();
+    hookUnlockAll();
 
-    console.log("\n[!] ALL MODULES INJECTED SUCCESSFULLY.");
+    console.log(`\n[+] Status Mod Saat Ini:`);
+    console.log(`    - Unreleased Features : ${MOD_CONFIG.UnreleasedEnabled ? "NYALA (ON)" : "MATI (OFF)"}`);
+    console.log(`    - Unlock ALL Cosmetic : ${MOD_CONFIG.UnlockAllEnabled ? "NYALA (ON)" : "MATI (OFF)"}\n`);
   }
 }, 1000);
