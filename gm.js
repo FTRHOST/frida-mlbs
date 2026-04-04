@@ -98,7 +98,7 @@ const check = setInterval(() => {
             try {
               let namePtr = GetNameFunc(goPtr);
               let name = readIl2CppString(namePtr);
-              if (name.includes("GM") || name.includes("UI_GM") || name.includes("m_GM")) {
+              if (name.includes("GM") || name.includes("UI_GM") || name.includes("m_GM") || name.includes("UI_GMUI")) {
                 args[1] = ptr(1); // Paksa True
               }
             } catch (e) { }

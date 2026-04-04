@@ -3,8 +3,8 @@
  */
 
 // === KONFIGURASI ===
-const TARGET_FRAME = "FRAME_SystemSetup"; // Frame asli yang ditekan di lobi
-const REPLACE_WITH = "FRAME_ContestMatch";      // Frame tersembunyi yang ingin dimunculkan
+const TARGET_FRAME = "FRAME_GM";
+const REPLACE_WITH = "FRAME_BattleGM";      // Frame tersembunyi yang ingin dimunculkan
 
 let il2cpp = null;
 let frameMap = {};

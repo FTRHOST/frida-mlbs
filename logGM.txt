@@ -1,0 +1,48 @@
+
+[-] Gagal: Method 'mStaticIsSandBox' tidak ditemukan di dalam class 'LoginCLibraryUtils'.
+[+] Sukses: Method 'IsAdjustSandBox' di class 'BattleStaticInit' ditemukan dan berhasil di-hook (Force Return: true).
+[-] Gagal: Method 'mIsSandBoxMode' tidak ditemukan di dalam class 'FrameTimeRecorder'.
+[+] Sukses: Method 'IsSandBoxIp' di class 'GameInit' ditemukan dan berhasil di-hook (Force Return: true).
+[-] Gagal: Method 'm_bGSDKSandBox' tidak ditemukan di dalam class 'GameServerConfig'.
+[-] Gagal: Method 'm_bAdjustSandBox' tidak ditemukan di dalam class 'GameServerConfig'.
+[-] Gagal: Method 'IsSandBox' tidak ditemukan di dalam class 'SDKCommon'.
+[-] Gagal: Method 'm_bCheckSandboxSubThreadParseData' tidak ditemukan di dalam class 'TableStreamBase`5'.
+[-] Gagal: Method 'm_bAdjustSandBox' tidak ditemukan di dalam class 'TableStreamBase`5'.
+[-] Gagal: Method 'm_bAdjustSandBox' tidak ditemukan di dalam class 'TableStreamGroupMgr'.
+[+] Sukses: Method 'IsAdjustSandBox' di class 'LogicExtension' ditemukan dan berhasil di-hook (Force Return: true).
+[-] Gagal: Method 'isSandBox' tidak ditemukan di dalam class 'SDKReportModel'.
+[+] Sukses: Method 'IsSandBoxEnv' di class 'CommonDownloadMgr' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'get_IsDebug' di class 'CommonDownloadMgr' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'CheckVersionInSandBox' di class 'ModeVersionData' ditemukan dan berhasil di-hook (Force Return: true).
+[-] Gagal: Method 'bSandbox' tidak ditemukan di dalam class 'GSDKCore'.
+[+] Sukses: Method 'IsSandBox' di class 'SdkInit' ditemukan dan berhasil di-hook (Force Return: true).
+[-] Gagal: Method 'bAllRoadSelectedAutoSandboxExchange' tidak ditemukan di dalam class 'RankHeroMgr'.
+[-] Gagal: Method ' bOpenSandboxRoadExchangeAddition' tidak ditemukan di dalam class 'RankHeroMgr'.
+[-] Gagal: Method 'bSandbox' tidak ditemukan di dalam class 'Cmd_Account_ByteDance_Login_CS'.
+[+] Sukses: Method 'IsEsportRuneEnable' di class 'ModelControlInBattle' ditemukan dan berhasil di-hook (Force Return: true).
+[-] Gagal: Method 'm_bEsportPlayer' tidak ditemukan di dalam class 'SystemData'.
+[+] Sukses: Method 'BUseEsportsEmblem' di class 'SystemData' ditemukan dan berhasil di-hook (Force Return: true).
+[-] Gagal: Method 'BEsportsEmblemOpen' tidak ditemukan di dalam class 'SystemSwitchData'.
+[-] Gagal: Method 'SystemSwitchData' tidak ditemukan di dalam class 'ModelControlInBattle'.
+[+] Sukses: Method 'IsGmServerRunning' di class 'LuaHelper' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'IsGmServerForceOnline' di class 'LuaHelper' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'IsGM' di class 'LocalSwitchXml' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'IsGmRecordCommond' di class 'BaseAgent' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'IsGMOpenBehaviac' di class 'MapTypeData' ditemukan dan berhasil di-hook (Force Return: true).
+[-] Gagal: Method 'bIsGM' tidak ditemukan di dalam class 'IShowStruct_ISHOW_OnWildFactoryEnd'.
+[+] Sukses: Method 'IsGMFloatWindow' di class 'UIVideo' ditemukan dan berhasil di-hook (Force Return: true).
+[-] Gagal: Method 'm_bEnable' tidak ditemukan di dalam class 'UIGMLogin'.
+[-] Gagal: Method '_bGmLogin' tidak ditemukan di dalam class 'NLLoadingUIAtlas'.
+[-] Gagal: Method 'bShouldEnableUIGMLogin' tidak ditemukan di dalam class 'NLLoadingUIAtlas'.
+[-] Gagal: Method '_bMLAccountLogin' tidak ditemukan di dalam class 'NLLoadingUIAtlas'.
+[-] Gagal: Method 'UNITY_GM' tidak ditemukan di dalam class 'LogicMacro'.
+[+] Sukses: Method 'get_m_bAutoStartGmServer' di class 'ShowBattleControl' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'get_m_bStartGmClient' di class 'ShowBattleControl' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'get_m_bLearnGMSkills' di class 'ShowBattleControl' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'IsSkinUseable' di class 'ChooseHeroMgr' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'BAutoTestMode' di class 'ChooseHeroMgr' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'CanSelectSkin' di class 'UIChooseHero' ditemukan dan berhasil di-hook (Force Return: true).
+[+] Sukses: Method 'IsForbidSkin' di class 'SystemData' ditemukan dan berhasil di-hook (Force Return: false).
+[+] Sukses: Method 'IsActivityForbidHeros' di class 'SystemData' ditemukan dan berhasil di-hook (Force Return: false).
+[+] Sukses: Method 'IsForbidUserDefineAIProto' di class 'ModelControlInBattle' ditemukan dan berhasil di-hook (Force Return: fa
+lse).

@@ -35,8 +35,6 @@ function initIl2cpp(libName) {
     field_get_name: n("il2cpp_field_get_name", 'pointer', ['pointer']),
     field_get_offset: n("il2cpp_field_get_offset", 'uint32', ['pointer']),
 
-    class_get_static_field_data: n("il2cpp_class_get_static_field_data", 'pointer', ['pointer']),
-
     // API Tambahan
     object_new: n("il2cpp_object_new", 'pointer', ['pointer']),
     thread_attach: n("il2cpp_thread_attach", 'pointer', ['pointer']),
@@ -186,44 +184,16 @@ function trackFieldChanges(targetClassName, targetFields) {
 // =========================================================
 
 function autoPatchBoolean(targetClassName, targetMethodName, targetFieldName, forceValue) {
-  if (!il2cpp) {
-    console.log("[!] Error: Modul IL2CPP belum siap.");
-    return;
-  }
-
+  if (!il2cpp) return;
   let klassPtr = findClassPtr(targetClassName);
-  if (!klassPtr) {
-    console.log(`[-] Gagal: Class '${targetClassName}' tidak ditemukan.`);
-    return;
-  }
+  if (!klassPtr) return;
 
   let fields = getAllFields(klassPtr);
   let targetField = fields.find(f => f.name === targetFieldName);
-  if (!targetField) {
-    console.log(`[-] Gagal: Field '${targetFieldName}' tidak ditemukan di class '${targetClassName}'.`);
-    return;
-  }
-
-  // Log saat hook berhasil dipasang
-  console.log(`[*] AutoPatch Siap: Menunggu '${targetMethodName}()' terpanggil untuk mengubah '${targetFieldName}' menjadi ${forceValue}...`);
-
-  let logCount = 0; // Variabel pembatas spam log
+  if (!targetField) return;
 
   hookSpecificMethod(klassPtr, targetMethodName, (args) => {
-    if (!args[0].isNull()) {
-      // Eksekusi penulisan nilai memori
-      writeBooleanField(args[0], targetField.offset, forceValue);
-
-      // Log saat method tereksekusi dan nilai diubah
-      if (logCount < 5) {
-        console.log(`[+] AutoPatch tereksekusi! '${targetClassName}::${targetFieldName}' berhasil di-force ke ${forceValue}`);
-        logCount++;
-
-        if (logCount === 5) {
-          console.log(`[*] AutoPatch berjalan lancar. Log untuk '${targetFieldName}' dihentikan agar console tidak spam/lag.`);
-        }
-      }
-    }
+    if (!args[0].isNull()) writeBooleanField(args[0], targetField.offset, forceValue);
   });
 }
 
@@ -1025,71 +995,38 @@ function traceSpecificMethod(targetClassName, targetMethodName) {
 }
 
 
-// =========================================================
-// CUSTOM FITUR: SPECIFIC PEEK & BACKTRACE (PELACAK PEMANGGIL)
-// =========================================================
-
-function peekSpecificClassData(targetClassName, targetMethodName) {
+function peekClassData(targetClassName) {
   if (!il2cpp) return console.log("[!] IL2CPP belum siap!");
 
   let klassPtr = findClassPtr(targetClassName);
   if (!klassPtr) return console.log(`[!] Class ${targetClassName} tidak ditemukan.`);
 
+  // Ambil semua definisi field (nama & offset)
   let fields = getAllFields(klassPtr);
-  console.log(`\n[*] Membedah Data Spesifik di: ${targetClassName}::${targetMethodName}()`);
 
-  let iter = Memory.alloc(Process.pointerSize).writePointer(NULL);
-  let methodPtr;
-  let found = false;
+  // Mencari Static Instance (Biasanya tersimpan di vtable atau static fields)
+  // Catatan: Ini mencoba menebak pointer instance jika class memiliki field 'instance' atau 'm_Instance'
+  console.log(`\n[*] Membedah Data Aktif di Class: ${targetClassName}`);
 
-  while (!(methodPtr = il2cpp.class_get_methods(klassPtr, iter)).isNull()) {
-    if (il2cpp.method_get_name(methodPtr).readUtf8String() === targetMethodName) {
-      found = true;
-      const impl = methodPtr.readPointer();
+  hookAllMethods(klassPtr, (methodName, args) => {
+    let instance = args[0]; // Kita pinjam pointer dari pemanggilan method pertama kali
+    if (instance && !instance.isNull() && !lastFieldValues[targetClassName]) {
+      console.log(`[+] Instance ditemukan di: ${instance}`);
+      console.log(`[+] Nilai Data Saat Ini:`);
 
-      if (!impl.isNull()) {
-        // Kita gunakan Interceptor langsung di sini agar bisa mengakses 'this.context'
-        Interceptor.attach(impl, {
-          onEnter: function(args) {
-            let instance = args[0]; // Wadah/Instance class
+      fields.forEach(f => {
+        let val = readFieldData(instance, f.offset, f.name);
+        console.log(`    |-- ${f.name} (0x${f.offset.toString(16)}): ${val}`);
+      });
 
-            if (instance && !instance.isNull()) {
-              console.log(`\n=========================================`);
-              console.log(`[🎯 TARGET HIT] ${targetClassName}::${targetMethodName} terpanggil!`);
-              console.log(`[+] Alamat Memori (Instance): ${instance}`);
-
-              // 1. PEEK DATA (Membaca isi field)
-              console.log(`\n[+] Isi Data Saat Ini:`);
-              fields.forEach(f => {
-                let val = readFieldData(instance, f.offset, f.name);
-                // Filter nilai kosong agar log lebih rapi
-                if (val !== 0 && val !== "0" && val !== "False" && val !== "???") {
-                  console.log(`    |-- ${f.name} (0x${f.offset.toString(16)}): ${val}`);
-                }
-              });
-
-              // 2. BACKTRACE (Melacak siapa yang memanggil method ini)
-              console.log(`\n[*] Jejak Pemanggil (Call Stack):`);
-              try {
-                // Thread.backtrace akan melacak runtutan fungsi ke belakang
-                let bt = Thread.backtrace(this.context, Backtracer.ACCURATE)
-                  .map(DebugSymbol.fromAddress)
-                  .join('\n    ');
-                console.log(`    ${bt}`);
-              } catch (e) {
-                console.log(`    [!] Gagal melacak pemanggil: ${e}`);
-              }
-              console.log(`=========================================\n`);
-            }
-          }
-        });
-        console.log(`[*] Radar terpasang! Menunggu ${targetClassName}::${targetMethodName} dieksekusi oleh game...`);
-      }
-      break; // Keluar dari loop setelah method ketemu
+      // Simpan agar tidak spam log
+      lastFieldValues[targetClassName] = instance;
     }
-  }
-  if (!found) console.log(`[!] Method ${targetMethodName} tidak ditemukan di class ${targetClassName}.`);
+  });
+
+  console.log(`[*] SIlakan buka menu/fitur terkait di game agar instance terdeteksi...`);
 }
+
 // =========================================================
 // FITUR TAMBAHAN: INT32 MODIFIER (FIELD & METHOD)
 // =========================================================
@@ -1419,80 +1356,6 @@ function forceInitUI(uiClassName, initMethodName) {
 }
 
 // =========================================================
-// CUSTOM FITUR: STATIC FIELD TRACKER & PATCHER
-// =========================================================
-
-function trackStaticField(targetClassName, targetFieldName) {
-  if (!il2cpp || !il2cpp.class_get_static_field_data) return console.log("[!] API static field belum siap.");
-
-  let klassPtr = findClassPtr(targetClassName);
-  if (!klassPtr) return console.log(`[!] Class ${targetClassName} tidak ditemukan.`);
-
-  let fields = getAllFields(klassPtr);
-  let targetField = fields.find(f => f.name === targetFieldName);
-  if (!targetField) return console.log(`[!] Field ${targetFieldName} tidak ditemukan di class ${targetClassName}.`);
-
-  console.log(`\n[*] Memulai Pelacakan Static Field: ${targetClassName}::${targetFieldName}`);
-  let lastKnownValue = -1;
-
-  setInterval(() => {
-    let staticDataPtr = il2cpp.class_get_static_field_data(klassPtr);
-    if (!staticDataPtr.isNull()) {
-      let fieldAddress = staticDataPtr.add(targetField.offset);
-      try {
-        let currentValue = fieldAddress.readU8();
-        if (currentValue !== lastKnownValue) {
-          let boolStr = currentValue === 1 ? "True" : "False";
-          console.log(`\n[STATIS-CHANGE] ${targetClassName}::${targetFieldName} berubah menjadi: ${boolStr}`);
-          lastKnownValue = currentValue;
-        }
-      } catch (e) { }
-    }
-  }, 1000);
-}
-
-function forceStaticBooleanField(targetClassName, targetFieldName, forceValue) {
-  if (!il2cpp || !il2cpp.class_get_static_field_data) return console.log("[!] API static field belum siap.");
-
-  let klassPtr = findClassPtr(targetClassName);
-  if (!klassPtr) return console.log(`[!] Class ${targetClassName} tidak ditemukan.`);
-
-  let fields = getAllFields(klassPtr);
-  let targetField = fields.find(f => f.name === targetFieldName);
-  if (!targetField) return console.log(`[!] Field ${targetFieldName} tidak ditemukan di class ${targetClassName}.`);
-
-  console.log(`[*] Menjalankan Force Static: Menunggu data statis '${targetClassName}'...`);
-
-  let logCount = 0; // Variabel untuk membatasi spam log
-
-  setInterval(() => {
-    let staticDataPtr = il2cpp.class_get_static_field_data(klassPtr);
-    if (!staticDataPtr.isNull()) {
-      let fieldAddress = staticDataPtr.add(targetField.offset);
-      try {
-        // Tulis memori
-        fieldAddress.writeU8(forceValue ? 1 : 0);
-
-        // Keterangan BERHASIL (Dibatasi 3 kali agar tidak spam)
-        if (logCount < 3) {
-          console.log(`[+] SUCCESS: Static Field '${targetClassName}::${targetFieldName}' berhasil ditulis menjadi ${forceValue}!`);
-          logCount++;
-
-          if (logCount === 3) {
-            console.log(`[*] Log untuk '${targetFieldName}' dimatikan agar tidak spam. Patch tetap aktif di latar belakang.`);
-          }
-        }
-      } catch (e) {
-        // Keterangan GAGAL
-        if (logCount === 0) {
-          console.log(`[-] GAGAL: Tidak bisa menulis ke memori '${targetFieldName}'. Error: ${e}`);
-          logCount = -1; // Set ke -1 agar error tidak spam
-        }
-      }
-    }
-  }, 500);
-}
-// =========================================================
 // EKSEKUSI UTAMA (Tulis Perintahmu Di Dalam setTimeout)
 // =========================================================
 
@@ -1501,25 +1364,31 @@ const check = setInterval(() => {
   if (mod) {
     clearInterval(check);
     initIl2cpp(mod.name);
-
-    //traceMethodCalls("GameInit");
-    forceStaticBooleanField("GameInit", "_bGmLogin", true);
-    //hookMethodReturnBool("GameInit", "m_bShowAccountBind", true);
-    forceStaticBooleanField("GameInit", "IsCelerTest", true);
-
-    forceStaticBooleanField("GameInit", "m_bShowAccountBind", true);
-
-
-
-
+    hookMethodReturnBool("LoginCLibraryUtils", "mStaticIsSandBox", true);
     hookMethodReturnBool("BattleStaticInit", "IsAdjustSandBox", true);
+    hookMethodReturnBool("FrameTimeRecorder", "mIsSandBoxMode", true);
     hookMethodReturnBool("GameInit", "IsSandBoxIp", true);
-    //hookMethodReturnBool("LogicExtension", "IsAdjustSandBox", true);
+    hookMethodReturnBool("GameServerConfig", "m_bGSDKSandBox", true);
+    hookMethodReturnBool("GameServerConfig", "m_bAdjustSandBox", true);
+    hookMethodReturnBool("SDKCommon", "IsSandBox", true);
+    hookMethodReturnBool("TableStreamBase`5", "m_bCheckSandboxSubThreadParseData", true);
+    hookMethodReturnBool("TableStreamBase`5", "m_bAdjustSandBox", true);
+    hookMethodReturnBool("TableStreamGroupMgr", "m_bAdjustSandBox", true);
+    hookMethodReturnBool("LogicExtension", "IsAdjustSandBox", true);
+    hookMethodReturnBool("SDKReportModel", "isSandBox", true);
     hookMethodReturnBool("CommonDownloadMgr", "IsSandBoxEnv", true);
     hookMethodReturnBool("CommonDownloadMgr", "get_IsDebug", true);
     hookMethodReturnBool("ModeVersionData", "CheckVersionInSandBox", true);
-    //hookMethodReturnBool("SdkInit", "IsSandBox", true);
-
+    hookMethodReturnBool("GSDKCore", "bSandbox", true);
+    hookMethodReturnBool("SdkInit", "IsSandBox", true);
+    hookMethodReturnBool("RankHeroMgr", "bAllRoadSelectedAutoSandboxExchange", true);
+    hookMethodReturnBool("RankHeroMgr", " bOpenSandboxRoadExchangeAddition", true);
+    hookMethodReturnBool("Cmd_Account_ByteDance_Login_CS", "bSandbox", true);
+    hookMethodReturnBool("ModelControlInBattle", "IsEsportRuneEnable", true);
+    hookMethodReturnBool("SystemData", "m_bEsportPlayer", true);
+    hookMethodReturnBool("SystemData", "BUseEsportsEmblem", true);
+    hookMethodReturnBool("SystemSwitchData", "BEsportsEmblemOpen", true);
+    hookMethodReturnBool("ModelControlInBattle", "SystemSwitchData", true);
     hookMethodReturnBool("LuaHelper", "IsGmServerRunning", true);
     hookMethodReturnBool("LuaHelper", "IsGmServerForceOnline", true);
     hookMethodReturnBool("LocalSwitchXml", "IsGM", true);
@@ -1527,6 +1396,7 @@ const check = setInterval(() => {
     hookMethodReturnBool("BaseAgent", "IsGmRecordCommond", true);
     hookMethodReturnBool("MapTypeData", "IsGMOpenBehaviac", true);
 
+    hookMethodReturnBool("IShowStruct_ISHOW_OnWildFactoryEnd", "bIsGM", true);
     hookMethodReturnBool("UIVideo", "IsGMFloatWindow", true);
     hookMethodReturnBool("UIGMLogin", "m_bEnable", true);
 
@@ -1544,11 +1414,34 @@ const check = setInterval(() => {
 
 
 
+    hookMethodReturnBool("ChooseHeroMgr", "IsSkinUseable", true);
+    hookMethodReturnBool("ChooseHeroMgr", "BAutoTestMode", true);
+    hookMethodReturnBool("UIChooseHero", "CanSelectSkin", true);
+    hookMethodReturnBool("SystemData", "IsForbidSkin", false);
+    hookMethodReturnBool("SystemData", "IsActivityForbidHeros", false);
 
+    hookMethodReturnBool("ModelControlInBattle", "IsForbidUserDefineAIProto", false);
+    hookMethodReturnBool("SystemData", "IsForbidHeroInChooseHero", false);
+    hookMethodReturnBool("SystemData", "IsForbidNewHeroList", false);
+    hookMethodReturnBool("SystemData", "IsForbidHeros", false);
+    hookMethodReturnBool("SystemData", "IsForbidARHero", false);
+    hookMethodReturnBool("SystemData", "IsForbidARSkin", false);
+    hookMethodReturnBool("SystemData", "IsForbidHeadFrameForce", false);
+    hookMethodReturnBool("SystemData", "IsForbidHeroDisOrder", false);
+    hookMethodReturnBool("SystemData", "IsForbidShareHeroShare", false);
+    hookMethodReturnBool("SystemData", "IsForbidSkinNumTag", false);
+    hookMethodReturnBool("SystemData", "IsForbidHero1v1", false);
+    hookMethodReturnBool("SystemData", "IsForbidHeadFrame", false);
+    hookMethodReturnBool("SystemData", "IsForbidNameSkin", false);
 
+    hookMethodReturnBool("SystemData", "IsForbidNameColor", false);
+    hookMethodReturnBool("SystemData", "IsForbidRoomBorder", false);
+    hookMethodReturnBool("SystemData", "IsForbidDragonCrystal", false);
+    hookMethodReturnBool("SystemData", "IsForbidDragonCrystal626", false);
 
-
-
+    hookMethodReturnBool("SystemData", "IsForbidStatue", false);
+    hookMethodReturnBool("IBridge", "IsForbidHeroInChooseHero", false);
+    hookMethodReturnBool("IMobaPluginBridge", "IsForbidAsset", false);
 
 
     // replaceUIText("PetwirKepo", "GMTEST01")
@@ -1563,7 +1456,7 @@ const check = setInterval(() => {
     // Beri jeda 5 detik agar game loading terlebih dahulu
     setTimeout(() => {
 
-      // trackGameObjectStatus("UI_GM");
+      trackGameObjectStatus("UI_GM");
 
 
 
@@ -1572,10 +1465,10 @@ const check = setInterval(() => {
       // ==========================================
       //
       // dumpSkinTable()
-      // traceSpecificMethod("BattleData", "ISHOW_GM");
+      traceSpecificMethod("BattleData", "ISHOW_GM");
 
       // Coba tekan tombol kameranya secara paksa
-      // forceClickGameObject("m_Button_Camera04");
+      forceClickGameObject("m_Button_Camera04");
       // Atau jika di dalam sub-class:
       // traceSpecificMethod("_ISHOW", "ISHOW_GM");
 
